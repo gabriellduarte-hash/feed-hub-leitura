@@ -19,6 +19,7 @@ type Artigo = {
   ai_summary: string | null;
   category: string | null;
   published_at: string | null;
+  image_url: string | null;
 };
 
 function formatarData(iso: string | null) {
@@ -31,20 +32,34 @@ function Card({ artigo }: { artigo: Artigo }) {
 
   return (
     <div className="flex gap-4 rounded-xl border border-border bg-surface p-[18px]">
-      <div className="flex w-[168px] flex-shrink-0 items-center justify-center rounded-[10px] bg-accent-soft">
-        <svg
-          width="40"
-          height="40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="var(--accent)"
-          strokeWidth="1.5"
-        >
-          <rect x="3" y="5" width="18" height="14" rx="2" />
-          <circle cx="8.5" cy="10" r="1.5" />
-          <path d="M21 15l-5-5-9 9" />
-        </svg>
-      </div>
+      {artigo.image_url ? (
+        // <img> simples de propósito: a URL vem de fontes RSS
+        // arbitrárias, e o next/image com remotePatterns liberado pra
+        // qualquer domínio vira um "proxy de imagem aberto" — a própria
+        // doc do Next desaconselha esse padrão.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={artigo.image_url}
+          alt=""
+          loading="lazy"
+          className="w-[168px] flex-shrink-0 rounded-[10px] object-cover"
+        />
+      ) : (
+        <div className="flex w-[168px] flex-shrink-0 items-center justify-center rounded-[10px] bg-accent-soft">
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--accent)"
+            strokeWidth="1.5"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <circle cx="8.5" cy="10" r="1.5" />
+            <path d="M21 15l-5-5-9 9" />
+          </svg>
+        </div>
+      )}
 
       <div className="flex min-w-0 flex-grow flex-col gap-2">
         <div className="text-base font-bold text-foreground">{artigo.title}</div>
@@ -77,7 +92,7 @@ export default async function FeedPage() {
 
   const { data: artigosData } = await supabase
     .from("articles")
-    .select("id, title, url, author, content, ai_summary, category, published_at")
+    .select("id, title, url, author, content, ai_summary, category, published_at, image_url")
     .order("collected_at", { ascending: false })
     .limit(60);
 
