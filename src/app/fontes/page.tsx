@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/Sidebar";
-import { adicionarFonte, criarTopico, removerFonte } from "./actions";
+import { criarTopico, removerFonte } from "./actions";
+import { AdicionarFonteForm } from "./AdicionarFonteForm";
 
 export default async function FontesPage() {
   const supabase = await createClient();
@@ -93,31 +94,7 @@ export default async function FontesPage() {
                 ))}
               </div>
 
-              <form
-                action={adicionarFonte}
-                className="flex items-center gap-2.5 border-t border-border pt-2.5"
-              >
-                <input type="hidden" name="topic_id" value={topico.id} />
-                <input
-                  name="url"
-                  required
-                  placeholder="URL do feed RSS ou da página"
-                  className="h-[38px] flex-grow rounded-lg border border-border bg-background px-3 text-[13px]"
-                />
-                <select
-                  name="type"
-                  className="h-[38px] rounded-lg border border-border bg-background px-2.5 text-[13px] text-text-secondary"
-                >
-                  <option value="rss">RSS</option>
-                  <option value="scrape">Página (scrape)</option>
-                </select>
-                <button
-                  type="submit"
-                  className="h-[38px] rounded-lg bg-foreground px-4 text-[13px] font-semibold text-background"
-                >
-                  Adicionar
-                </button>
-              </form>
+              <AdicionarFonteForm topicId={topico.id} />
             </div>
           ))}
         </div>

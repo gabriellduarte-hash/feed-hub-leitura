@@ -17,14 +17,26 @@ export async function criarTopico(formData: FormData) {
   revalidatePath("/fontes");
 }
 
-export async function adicionarFonte(formData: FormData) {
+export async function adicionarFonte(
+  _estadoAnterior: { erro: string } | undefined,
+  formData: FormData,
+): Promise<{ erro: string } | undefined> {
   const topicId = formData.get("topic_id") as string;
   const url = (formData.get("url") as string)?.trim();
   const type = formData.get("type") as string;
-  if (!topicId || !url || !type) return;
+  if (!topicId || !url || !type) return { erro: "Preencha a URL." };
 
   const supabase = await createClient();
-  await supabase.from("sources").insert({ topic_id: topicId, url, type });
+  const { error } = await supabase.from("sources").insert({ topic_id: topicId, url, type });
+
+  if (error) {
+    // 23505 = unique_violation (sql/010_unique_topic_url.sql)
+    if (error.code === "23505") {
+      return { erro: "Essa URL já está cadastrada nesse tópico." };
+    }
+    return { erro: "Não deu pra adicionar a fonte. Tenta de novo." };
+  }
+
   revalidatePath("/fontes");
 }
 
