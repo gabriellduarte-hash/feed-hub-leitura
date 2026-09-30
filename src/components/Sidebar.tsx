@@ -97,7 +97,9 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
   }
 
   const emFontes = pathname.startsWith("/fontes");
-  const emInicio = !emFontes;
+  const emLerMaisTarde = pathname.startsWith("/ler-mais-tarde");
+  const emBuscar = pathname.startsWith("/buscar");
+  const emInicio = !emFontes && !emLerMaisTarde && !emBuscar;
 
   return (
     <div className="flex h-full flex-shrink-0 bg-background">
@@ -109,8 +111,8 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
 
         <div className="mt-1 flex flex-col gap-1.5">
           <RailIcon href="/" ativo={emInicio} path={ICONES.inicio} />
-          <RailIcon href="#" ativo={false} path={ICONES.lerMaisTarde} />
-          <RailIcon href="#" ativo={false} path={ICONES.buscar} />
+          <RailIcon href="/ler-mais-tarde" ativo={emLerMaisTarde} path={ICONES.lerMaisTarde} />
+          <RailIcon href="/buscar" ativo={emBuscar} path={ICONES.buscar} />
           <RailIcon href="/fontes" ativo={emFontes} path={ICONES.fontes} />
         </div>
 
@@ -154,10 +156,10 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
           <ItemNav href="/" ativo={emInicio}>
             Início
           </ItemNav>
-          <ItemNav href="#" ativo={false}>
+          <ItemNav href="/ler-mais-tarde" ativo={emLerMaisTarde}>
             Ler mais tarde
           </ItemNav>
-          <ItemNav href="#" ativo={false}>
+          <ItemNav href="/buscar" ativo={emBuscar}>
             Buscar
           </ItemNav>
           <ItemNav href="/fontes" ativo={emFontes}>
