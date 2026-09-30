@@ -1,69 +1,114 @@
-import Image from "next/image";
+import { createClient } from "@/lib/supabase/server";
+import { Sidebar } from "@/components/Sidebar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
-export default function Home() {
+function formatarData(iso: string | null) {
+  if (!iso) return "data não informada";
+  return new Date(iso).toLocaleDateString("pt-BR");
+}
+
+export default async function FeedPage() {
+  const supabase = await createClient();
+
+  const { data: topicos } = await supabase
+    .from("topics")
+    .select("id, name")
+    .order("created_at");
+
+  const { data: artigos } = await supabase
+    .from("articles")
+    .select("id, title, url, author, content, published_at, sources(topic_id, topics(name))")
+    .order("collected_at", { ascending: false })
+    .limit(30);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex h-screen bg-background">
+      <Sidebar topicos={topicos ?? []} />
+
+      <div className="flex min-w-0 flex-grow flex-col">
+        <div className="flex items-start justify-between px-10 pt-6">
+          <div className="flex flex-col gap-1">
+            <div className="text-2xl font-bold text-foreground">Início</div>
+            <div className="mono text-xs text-text-muted">
+              {artigos?.length ?? 0} artigo(s)
+            </div>
+          </div>
+          <ThemeToggle />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="flex-grow overflow-y-auto px-10 pt-5 pb-8">
+          <div className="flex max-w-[800px] flex-col gap-7">
+            {(!artigos || artigos.length === 0) && (
+              <p className="text-sm text-text-secondary">
+                Nenhum artigo coletado ainda. Cadastre um tópico e uma fonte em{" "}
+                <span className="font-semibold">Gerenciar fontes</span>.
+              </p>
+            )}
+
+            {artigos?.map((artigo) => {
+              // Sem tipos gerados pro schema ainda (precisa do Supabase
+              // MCP do projeto certo conectado) — o embed aninhado do
+              // PostgREST fica como `any` por enquanto.
+              const artigoComTopico = artigo as typeof artigo & {
+                sources?: { topics?: { name?: string } };
+              };
+              const nomeTopico = artigoComTopico.sources?.topics?.name;
+              return (
+                <div
+                  key={artigo.id}
+                  className="flex gap-4 rounded-xl border border-border bg-surface p-[18px]"
+                >
+                  <div className="flex w-[168px] flex-shrink-0 items-center justify-center rounded-[10px] bg-accent-soft">
+                    <svg
+                      width="40"
+                      height="40"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--accent)"
+                      strokeWidth="1.5"
+                    >
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                      <circle cx="8.5" cy="10" r="1.5" />
+                      <path d="M21 15l-5-5-9 9" />
+                    </svg>
+                  </div>
+
+                  <div className="flex min-w-0 flex-grow flex-col gap-2">
+                    {nomeTopico && (
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                        <span className="mono text-[10px] font-bold tracking-wider text-text-muted uppercase">
+                          {nomeTopico}
+                        </span>
+                      </div>
+                    )}
+                    <div className="text-base font-bold text-foreground">
+                      {artigo.title}
+                    </div>
+                    <div className="mono text-[11px] text-text-muted">
+                      {artigo.author ?? "autor não informado"} ·{" "}
+                      {formatarData(artigo.published_at)}
+                    </div>
+                    {artigo.content && (
+                      <div className="line-clamp-2 text-[13px] text-text-secondary">
+                        {artigo.content}
+                      </div>
+                    )}
+                    <a
+                      href={artigo.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-0.5 text-xs font-bold text-accent"
+                    >
+                      Ler artigo completo →
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
