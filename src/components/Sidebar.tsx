@@ -46,8 +46,10 @@ function RailIcon({
   return (
     <Link
       href={href}
-      className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-        ativo ? "bg-accent-soft text-accent" : "text-text-secondary"
+      className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-150 ${
+        ativo
+          ? "bg-accent-soft text-accent"
+          : "text-text-secondary hover:scale-105 hover:bg-surface-hover hover:text-foreground"
       }`}
     >
       <NavIcon path={path} />
@@ -67,8 +69,10 @@ function ItemNav({
   return (
     <Link
       href={href}
-      className={`rounded-lg px-2.5 py-2 text-[13px] font-semibold ${
-        ativo ? "bg-accent-soft text-accent" : "text-text-secondary"
+      className={`rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors duration-150 ${
+        ativo
+          ? "bg-accent-soft text-accent"
+          : "text-text-secondary hover:bg-surface-hover hover:text-foreground"
       }`}
     >
       {children}
@@ -127,7 +131,7 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
           <button
             onClick={alternarColapso}
             title="Expandir menu"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors duration-150 hover:bg-surface-hover hover:text-foreground"
           >
             <NavIcon path={ICONES.expandir} />
           </button>
@@ -138,7 +142,7 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
         <button
           onClick={sair}
           title="Sair"
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white"
+          className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white transition-transform duration-150 hover:scale-110 active:scale-95"
         >
           <NavIcon path="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" />
         </button>
@@ -154,7 +158,7 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
             <button
               onClick={alternarColapso}
               title="Recolher menu"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-text-muted"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-text-muted transition-colors duration-150 hover:bg-surface-hover hover:text-foreground"
             >
               <NavIcon path={ICONES.colapsar} />
             </button>

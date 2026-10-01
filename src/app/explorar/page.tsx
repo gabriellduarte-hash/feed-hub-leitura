@@ -56,7 +56,7 @@ export default async function ExplorarPage() {
                   return (
                     <div
                       key={item.id}
-                      className="flex items-center gap-4 rounded-xl border border-border bg-surface p-4"
+                      className="flex items-center gap-4 rounded-xl border border-border bg-surface p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md"
                     >
                       <div className="flex min-w-0 flex-grow flex-col gap-0.5">
                         <div className="text-sm font-bold text-foreground">{item.name}</div>
@@ -74,7 +74,7 @@ export default async function ExplorarPage() {
                           <input type="hidden" name="url" value={item.url} />
                           <button
                             type="submit"
-                            className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-semibold text-background"
+                            className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-semibold text-background transition-transform duration-150 hover:scale-105 active:scale-95"
                           >
                             Seguir
                           </button>
