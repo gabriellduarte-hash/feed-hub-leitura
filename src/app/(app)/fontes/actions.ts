@@ -14,7 +14,7 @@ export async function criarTopico(formData: FormData) {
   if (!user) return;
 
   await supabase.from("topics").insert({ user_id: user.id, name: nome });
-  revalidatePath("/fontes");
+  revalidatePath("/", "layout");
 }
 
 export async function adicionarFonte(
@@ -24,10 +24,11 @@ export async function adicionarFonte(
   const topicId = formData.get("topic_id") as string;
   const url = (formData.get("url") as string)?.trim();
   const type = formData.get("type") as string;
+  const name = ((formData.get("name") as string) ?? "").trim() || null;
   if (!topicId || !url || !type) return { erro: "Preencha a URL." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("sources").insert({ topic_id: topicId, url, type });
+  const { error } = await supabase.from("sources").insert({ topic_id: topicId, url, type, name });
 
   if (error) {
     // 23505 = unique_violation (sql/010_unique_topic_url.sql)
@@ -37,7 +38,7 @@ export async function adicionarFonte(
     return { erro: "Não deu pra adicionar a fonte. Tenta de novo." };
   }
 
-  revalidatePath("/fontes");
+  revalidatePath("/", "layout");
 }
 
 export async function removerFonte(formData: FormData) {
@@ -46,5 +47,5 @@ export async function removerFonte(formData: FormData) {
 
   const supabase = await createClient();
   await supabase.from("sources").delete().eq("id", id);
-  revalidatePath("/fontes");
+  revalidatePath("/", "layout");
 }

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { Sidebar } from "@/components/Sidebar";
+import { Conteudo } from "@/components/FeedLayout";
+import { PageHeader } from "@/components/PageHeader";
 import { removerDestinatario } from "./actions";
 import { AdicionarDestinatarioForm } from "./AdicionarDestinatarioForm";
 
@@ -8,7 +9,6 @@ const LIMITE_DESTINATARIOS = 10;
 export default async function CompartilharPage() {
   const supabase = await createClient();
 
-  const { data: topicos } = await supabase.from("topics").select("id, name").order("created_at");
   const { data: destinatarios } = await supabase
     .from("digest_recipients")
     .select("id, email, created_at")
@@ -17,19 +17,12 @@ export default async function CompartilharPage() {
   const total = destinatarios?.length ?? 0;
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar topicos={topicos ?? []} />
-
-      <div className="flex-grow overflow-y-auto px-10 py-7">
-        <div className="flex max-w-[560px] flex-col gap-6">
-          <div className="flex flex-col gap-1">
-            <div className="text-2xl font-bold text-foreground">Compartilhar resumo diário</div>
-            <p className="text-sm text-text-secondary">
-              Além de você, esses e-mails também recebem o resumo diário por IA. Limite de{" "}
-              {LIMITE_DESTINATARIOS}.
-            </p>
-          </div>
-
+    <Conteudo>
+      <PageHeader
+        titulo="Compartilhar resumo diário"
+        subtitulo={`Além de você, esses e-mails também recebem o resumo diário por IA. Limite de ${LIMITE_DESTINATARIOS}.`}
+      />
+      <div className="flex max-w-[560px] flex-col gap-6">
           <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-[22px]">
             <div className="mono text-xs font-semibold text-text-muted">
               {total}/{LIMITE_DESTINATARIOS} destinatários
@@ -54,7 +47,7 @@ export default async function CompartilharPage() {
                     <button
                       type="submit"
                       aria-label="Remover destinatário"
-                      className="text-text-muted"
+                      className="text-text-muted transition-colors hover:text-red-500"
                     >
                       <svg
                         width="16"
@@ -79,8 +72,7 @@ export default async function CompartilharPage() {
               </div>
             )}
           </div>
-        </div>
       </div>
-    </div>
+    </Conteudo>
   );
 }

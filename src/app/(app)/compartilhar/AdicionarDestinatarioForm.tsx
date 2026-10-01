@@ -14,12 +14,12 @@ export function AdicionarDestinatarioForm() {
           type="email"
           required
           placeholder="email@exemplo.com"
-          className="h-10 flex-grow rounded-lg border border-border bg-surface px-3 text-sm"
+          className="h-10 flex-grow rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-text-muted focus:border-text-muted"
         />
         <button
           type="submit"
           disabled={pendente}
-          className="h-10 rounded-lg bg-foreground px-4 text-sm font-semibold text-background disabled:opacity-60"
+          className="h-10 rounded-lg bg-accent px-4 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
         >
           {pendente ? "Adicionando..." : "Adicionar"}
         </button>

@@ -1,57 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useLocalStorage } from "@/lib/useLocalStorage";
 
 export function ThemeToggle() {
-  const [escuro, setEscuro] = useState(false);
+  const [tema, setTema] = useLocalStorage("tema", "dark");
+  const escuro = tema !== "light";
 
   useEffect(() => {
-    const salvo = localStorage.getItem("tema");
-    if (salvo === "dark") {
-      setEscuro(true);
-      document.documentElement.setAttribute("data-theme", "dark");
-    }
-  }, []);
-
-  function alternar() {
-    const novo = !escuro;
-    setEscuro(novo);
-    document.documentElement.setAttribute("data-theme", novo ? "dark" : "light");
-    localStorage.setItem("tema", novo ? "dark" : "light");
-  }
+    document.documentElement.dataset.theme = escuro ? "dark" : "light";
+  }, [escuro]);
 
   return (
     <button
-      onClick={alternar}
-      aria-label="Alternar tema claro/escuro"
-      className="flex h-6 w-10 items-center rounded-full p-[3px] transition-colors"
-      style={{ background: escuro ? "var(--accent)" : "var(--surface-hover)" }}
+      onClick={() => setTema(escuro ? "light" : "dark")}
+      className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-surface-hover"
     >
-      <div
-        className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-surface transition-transform"
-        style={{ transform: escuro ? "translateX(16px)" : "translateX(0)" }}
+      Tema escuro
+      <span
+        className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${
+          escuro ? "bg-accent" : "bg-surface-active"
+        }`}
       >
-        {escuro ? (
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="var(--accent)">
-            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-          </svg>
-        ) : (
-          <svg
-            width="11"
-            height="11"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--accent)"
-            strokeWidth="2.4"
-          >
-            <circle cx="12" cy="12" r="4.5" />
-            <line x1="12" y1="2" x2="12" y2="4.5" />
-            <line x1="12" y1="19.5" x2="12" y2="22" />
-            <line x1="2" y1="12" x2="4.5" y2="12" />
-            <line x1="19.5" y1="12" x2="22" y2="12" />
-          </svg>
-        )}
-      </div>
+        <span
+          className={`h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+            escuro ? "translate-x-4" : "translate-x-0"
+          }`}
+        />
+      </span>
     </button>
   );
 }
