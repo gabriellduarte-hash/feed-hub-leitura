@@ -28,6 +28,7 @@ const ICONES = {
   lerMaisTarde: "M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
   buscar: "M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0 M21 21l-4.7-4.7",
   fontes: "M4 5a15 15 0 0 1 15 15 M4 11a9 9 0 0 1 9 9",
+  compartilhar: "M3 6h18v12H3z M3 7l9 6 9-6",
   colapsar: "M11 17l-5-5 5-5 M18 17l-5-5 5-5",
   expandir: "M13 17l5-5-5-5 M6 17l5-5-5-5",
 };
@@ -99,7 +100,8 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
   const emFontes = pathname.startsWith("/fontes");
   const emLerMaisTarde = pathname.startsWith("/ler-mais-tarde");
   const emBuscar = pathname.startsWith("/buscar");
-  const emInicio = !emFontes && !emLerMaisTarde && !emBuscar;
+  const emCompartilhar = pathname.startsWith("/compartilhar");
+  const emInicio = !emFontes && !emLerMaisTarde && !emBuscar && !emCompartilhar;
 
   return (
     <div className="flex h-full flex-shrink-0 bg-background">
@@ -114,6 +116,7 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
           <RailIcon href="/ler-mais-tarde" ativo={emLerMaisTarde} path={ICONES.lerMaisTarde} />
           <RailIcon href="/buscar" ativo={emBuscar} path={ICONES.buscar} />
           <RailIcon href="/fontes" ativo={emFontes} path={ICONES.fontes} />
+          <RailIcon href="/compartilhar" ativo={emCompartilhar} path={ICONES.compartilhar} />
         </div>
 
         {colapsado && (
@@ -164,6 +167,9 @@ export function Sidebar({ topicos }: { topicos: Topico[] }) {
           </ItemNav>
           <ItemNav href="/fontes" ativo={emFontes}>
             Gerenciar fontes
+          </ItemNav>
+          <ItemNav href="/compartilhar" ativo={emCompartilhar}>
+            Compartilhar
           </ItemNav>
 
           <div className="mono mt-4 mb-1.5 px-2.5 text-[10px] font-bold tracking-wider text-text-muted uppercase">
