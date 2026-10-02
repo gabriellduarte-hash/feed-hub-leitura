@@ -2,9 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { faviconDe, hostDe, nomeDaFonte } from "@/lib/fonte";
 import { Conteudo } from "@/components/FeedLayout";
-import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
-import { criarTopico, removerFonte } from "./actions";
+import { criarTopico } from "./actions";
+import { BotaoRemoverFonte } from "./BotaoRemoverFonte";
 import { AdicionarFonteForm } from "./AdicionarFonteForm";
 
 type Topico = {
@@ -91,17 +91,7 @@ export default async function OrganizarFontesPage() {
                 <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent uppercase">
                   {fonte.type}
                 </span>
-                <form action={removerFonte}>
-                  <input type="hidden" name="id" value={fonte.id} />
-                  <button
-                    type="submit"
-                    aria-label="Deixar de seguir"
-                    title="Deixar de seguir"
-                    className="flex h-7 w-7 items-center justify-center rounded text-text-muted opacity-0 transition hover:bg-surface-active hover:text-red-500 group-hover:opacity-100"
-                  >
-                    <Icon nome="lixeira" tamanho={16} />
-                  </button>
-                </form>
+                <BotaoRemoverFonte id={fonte.id} nome={nomeDaFonte(fonte.name, fonte.url)} />
               </div>
             ))}
 

@@ -40,12 +40,3 @@ export async function adicionarFonte(
 
   revalidatePath("/", "layout");
 }
-
-export async function removerFonte(formData: FormData) {
-  const id = formData.get("id") as string;
-  if (!id) return;
-
-  const supabase = await createClient();
-  await supabase.from("sources").delete().eq("id", id);
-  revalidatePath("/", "layout");
-}

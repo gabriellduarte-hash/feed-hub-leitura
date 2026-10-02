@@ -24,16 +24,16 @@ async function resolverColecao(supabase: Supabase, userId: string, topicId: stri
   return error ? null : (nova.id as string);
 }
 
-export async function seguirFeedDoCatalogo(formData: FormData) {
+export async function seguirFeedDoCatalogo(formData: FormData): Promise<{ erro?: string } | undefined> {
   const catalogoId = formData.get("catalog_id") as string;
   const topicId = (formData.get("topic_id") as string) ?? "";
-  if (!catalogoId) return;
+  if (!catalogoId) return { erro: "Fonte inválida." };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { erro: "Sessão expirada. Entre de novo." };
 
   // Nome/URL/categoria vêm do catálogo no banco, não do formulário —
   // o cliente só diz qual item quer seguir.
@@ -42,16 +42,16 @@ export async function seguirFeedDoCatalogo(formData: FormData) {
     .select("name, url, category")
     .eq("id", catalogoId)
     .maybeSingle();
-  if (!item) return;
+  if (!item) return { erro: "Fonte não encontrada no catálogo." };
 
   const colecao = await resolverColecao(supabase, user.id, topicId, item.category);
-  if (!colecao) return;
+  if (!colecao) return { erro: "Não foi possível criar a coleção." };
 
   const { error } = await supabase
     .from("sources")
     .insert({ topic_id: colecao, url: item.url, name: item.name, type: "rss" });
   // 23505: já segue esse feed nessa coleção — clicar de novo não quebra nada
-  if (error && error.code !== "23505") return;
+  if (error && error.code !== "23505") return { erro: "Não foi possível seguir essa fonte." };
 
   revalidatePath("/", "layout");
 }

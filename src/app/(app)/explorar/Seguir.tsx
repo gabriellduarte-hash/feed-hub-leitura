@@ -30,8 +30,13 @@ export function BotaoSeguir({
     dados.set("topic_id", colecao?.id ?? "");
     setSeguindo(true);
     startTransition(async () => {
-      await seguirFeedDoCatalogo(dados);
-      mostrarToast(`Seguindo ${nome} em ${colecao?.nome ?? categoria}`);
+      const resultado = await seguirFeedDoCatalogo(dados);
+      if (resultado?.erro) {
+        setSeguindo(false);
+        mostrarToast(resultado.erro);
+      } else {
+        mostrarToast(`Seguindo ${nome} em ${colecao?.nome ?? categoria}`);
+      }
     });
   }
 

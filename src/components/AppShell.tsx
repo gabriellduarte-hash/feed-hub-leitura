@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
-import { Sidebar, type DadosSidebar } from "./Sidebar";
+import { PainelFeeds, Rail, type DadosSidebar } from "./Sidebar";
 import { Toaster } from "./Toast";
 
 export function AppShell({ dados, children }: { dados: DadosSidebar; children: React.ReactNode }) {
@@ -30,27 +30,21 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
 
   return (
     <div className="flex h-screen bg-background">
+      <Rail
+        email={dados.email}
+        painelAberto={!recolhido}
+        onAlternarPainel={alternar}
+        onIrPara={() => setIrParaAberto(true)}
+      />
       <div
         className={`flex-shrink-0 overflow-hidden transition-[width] duration-[250ms] ease-out ${
-          recolhido ? "w-0" : "w-[270px]"
+          recolhido ? "w-0" : "w-[264px]"
         }`}
       >
-        <Sidebar dados={dados} onRecolher={alternar} onIrPara={() => setIrParaAberto(true)} />
+        <PainelFeeds dados={dados} onRecolher={alternar} />
       </div>
 
-      <main className="relative min-w-0 flex-grow overflow-y-auto">
-        {recolhido && (
-          <button
-            type="button"
-            onClick={alternar}
-            title="Mostrar menu"
-            className="animate-fade-up fixed top-3 left-3 z-30 flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-hover hover:text-foreground"
-          >
-            <Icon nome="painel" />
-          </button>
-        )}
-        {children}
-      </main>
+      <main className="relative min-w-0 flex-grow overflow-y-auto">{children}</main>
 
       {irParaAberto && <IrPara dados={dados} onFechar={() => setIrParaAberto(false)} />}
       <Toaster />
@@ -68,8 +62,8 @@ function IrPara({ dados, onFechar }: { dados: DadosSidebar; onFechar: () => void
 
   const destinos = useMemo<Destino[]>(
     () => [
-      { rotulo: "Hoje", href: "/", icone: "hoje" },
-      { rotulo: "Todos", href: "/feeds/todos", icone: "lista" },
+      { rotulo: "Hoje", href: "/", icone: "casa" },
+      { rotulo: "Todos", href: "/feeds/todos", icone: "camadas" },
       { rotulo: "Ler mais tarde", href: "/ler-mais-tarde", icone: "marcador" },
       { rotulo: "Lidos recentemente", href: "/lidos-recentemente", icone: "relogio" },
       { rotulo: "Seguir fontes", href: "/explorar", icone: "rss" },

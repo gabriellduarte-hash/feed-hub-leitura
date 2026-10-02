@@ -109,7 +109,13 @@ function BotaoFavorito({ fonte }: { fonte: FonteMenu }) {
       onClick={() => {
         const novo = !favorita;
         setFavorita(novo);
-        startTransition(() => definirFavorita(fonte.id, novo));
+        startTransition(async () => {
+          const resultado = await definirFavorita(fonte.id, novo);
+          if (resultado?.erro) {
+            setFavorita(!novo);
+            mostrarToast(resultado.erro);
+          }
+        });
       }}
       className={`${classeBotao} ${favorita ? "text-accent hover:text-accent" : ""}`}
     >

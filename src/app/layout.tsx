@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
+// Fonte variável: sem "weight", vem o eixo inteiro (100–800) + itálico
 const jetBrainsMono = JetBrains_Mono({
   variable: "--font-technical",
   subsets: ["latin"],
-  weight: ["500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -24,14 +20,12 @@ export const metadata: Metadata = {
 const SCRIPT_TEMA = `try{if(localStorage.getItem("tema")==="light")document.documentElement.dataset.theme="light"}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
-  // Escuro por padrão (como a Feedly); o ThemeToggle troca pra claro se
-  // o usuário escolheu isso antes (localStorage).
   return (
     <html
       lang="pt-BR"
       data-theme="dark"
       suppressHydrationWarning
-      className={`${inter.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`${jetBrainsMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />

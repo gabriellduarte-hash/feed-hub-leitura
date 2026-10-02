@@ -125,8 +125,8 @@ export function ItensMenuColecao({
   function executar(acao: () => Promise<unknown>, mensagem: string) {
     fechar();
     startTransition(async () => {
-      await acao();
-      mostrarToast(mensagem);
+      const resultado = (await acao()) as { erro?: string } | undefined;
+      mostrarToast(resultado?.erro ?? mensagem);
     });
   }
 

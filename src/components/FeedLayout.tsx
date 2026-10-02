@@ -29,7 +29,7 @@ export function FeedComSugestoes({
       {sugestoes.length > 0 && (
         <aside className="hidden w-[220px] flex-shrink-0 lg:block">
           <div className="sticky top-6 flex flex-col gap-4">
-            <h2 className="text-[13px] text-text-secondary">Você também pode gostar</h2>
+            <h2 className="text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">Você também pode gostar</h2>
             {sugestoes.map((s) => (
               <Link
                 key={s.id}
@@ -40,7 +40,7 @@ export function FeedComSugestoes({
                 <img
                   src={faviconDe(s.host)}
                   alt=""
-                  className="h-9 w-9 flex-shrink-0 rounded-lg bg-surface-active p-1 transition-transform duration-150 group-hover:scale-105"
+                  className="aspect-square h-10 w-10 flex-shrink-0 rounded-xl bg-surface-active p-1.5 ring-1 ring-border transition-transform duration-150 group-hover:scale-105"
                 />
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold text-foreground group-hover:underline">
