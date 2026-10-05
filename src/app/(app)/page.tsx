@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { agruparPorCategoria, agruparPorFonte, buscarArtigos } from "@/lib/feed";
+import { agruparPorCategoria, buscarArtigos, buscarPagina, contarNaoLidos } from "@/lib/feed";
 import { ArticleList } from "@/components/ArticleList";
 import { FeedActions } from "@/components/FeedActions";
 import { Conteudo, Vazio } from "@/components/FeedLayout";
@@ -10,24 +10,20 @@ export default async function HojePage(props: PageProps<"/">) {
   const aba = abaParam === "explorar" ? "explorar" : "eu";
 
   const supabase = await createClient();
-  const artigos = await buscarArtigos(supabase, { limite: 60 });
-  const naoLidos = artigos.filter((a) => !a.lido);
+  const naoLidos = await contarNaoLidos(supabase);
 
-  // "Eu": o que chegou das suas fontes, agrupado por fonte (como a Feedly).
-  // "Explorar": os mesmos artigos pela categoria que a IA atribuiu.
-  const secoes = aba === "eu" ? agruparPorFonte(artigos) : agruparPorCategoria(artigos);
+  // "Eu": tudo das suas fontes, agrupado por data, com rolagem infinita.
+  // "Explorar": os artigos mais recentes pela categoria que a IA atribuiu.
+  const pagina = aba === "eu" ? await buscarPagina(supabase, {}) : null;
+  const porCategoria = aba === "explorar" ? await buscarArtigos(supabase, { limite: 60 }) : [];
+  const vazio = pagina ? pagina.artigos.length === 0 : porCategoria.length === 0;
 
   return (
     <Conteudo>
       <PageHeader
         titulo="Hoje"
         subtitulo="O que você precisa saber pra ficar por dentro"
-        acoes={
-          <FeedActions
-            escopo={{ tipo: "ids", ids: naoLidos.map((a) => a.id) }}
-            naoLidos={naoLidos.length}
-          />
-        }
+        acoes={<FeedActions escopo={{ tipo: "todos" }} naoLidos={naoLidos} />}
       />
       <Tabs
         ativa={aba}
@@ -37,14 +33,16 @@ export default async function HojePage(props: PageProps<"/">) {
         ]}
       />
 
-      {artigos.length === 0 ? (
+      {vazio ? (
         <Vazio
           titulo="Seu feed está vazio"
           texto="Siga alguns sites e os artigos novos aparecem aqui assim que o coletor rodar."
           acao={{ rotulo: "Seguir fontes", href: "/explorar" }}
         />
+      ) : pagina ? (
+        <ArticleList key="eu" feed={{ ...pagina, filtro: {} }} />
       ) : (
-        <ArticleList secoes={secoes} />
+        <ArticleList key="explorar" secoes={agruparPorCategoria(porCategoria)} />
       )}
     </Conteudo>
   );

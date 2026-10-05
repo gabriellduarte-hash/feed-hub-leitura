@@ -1,22 +1,80 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import type { ArtigoLista, Secao } from "@/lib/feed";
+import { agruparPorDia, type ArtigoLista, type FiltroPagina, type Secao } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
 import { definirLido, definirSalvo } from "@/app/actions/artigos";
+import { carregarMaisArtigos } from "@/app/actions/paginacao";
 import { Icon } from "./Icon";
 import { ArticlePanel } from "./ArticlePanel";
 
 type Estado = { lido: boolean; salvo: boolean };
 
+/** Modo feed: primeira página vinda do servidor + rolagem infinita, agrupado por dia. */
+export type Feed = { artigos: ArtigoLista[]; filtro: FiltroPagina; temMais: boolean };
+
 export function ArticleList({
-  secoes,
+  secoes: secoesFixas,
+  feed,
   mostrarFim = false,
 }: {
-  secoes: Secao[];
+  secoes?: Secao[];
+  feed?: Feed;
   mostrarFim?: boolean;
 }) {
-  const artigos = useMemo(() => secoes.flatMap((s) => s.artigos), [secoes]);
+  const [extras, setExtras] = useState<ArtigoLista[]>([]);
+  const [temMais, setTemMais] = useState(feed?.temMais ?? false);
+  const [carregando, setCarregando] = useState(false);
+  const [erroAoCarregar, setErroAoCarregar] = useState(false);
+  const emAndamento = useRef(false);
+  const sentinela = useRef<HTMLDivElement>(null);
+
+  const artigos = useMemo(() => {
+    if (!feed) return (secoesFixas ?? []).flatMap((s) => s.artigos);
+    // Sem repetir: se chegaram artigos novos entre uma página e outra,
+    // o mesmo item pode vir de novo na página seguinte
+    const vistos = new Set<string>();
+    return [...feed.artigos, ...extras].filter((a) => !vistos.has(a.id) && vistos.add(a.id));
+  }, [feed, extras, secoesFixas]);
+  const secoes = useMemo(
+    () => (feed ? agruparPorDia(artigos) : (secoesFixas ?? [])),
+    [feed, artigos, secoesFixas],
+  );
+  const proximoOffset = (feed?.artigos.length ?? 0) + extras.length;
+
+  const carregarMais = useCallback(async () => {
+    if (!feed || emAndamento.current) return;
+    emAndamento.current = true;
+    setCarregando(true);
+    setErroAoCarregar(false);
+    try {
+      const pagina = await carregarMaisArtigos(feed.filtro, proximoOffset);
+      setExtras((atual) => [...atual, ...pagina.artigos]);
+      setTemMais(pagina.temMais);
+    } catch {
+      setErroAoCarregar(true);
+    } finally {
+      emAndamento.current = false;
+      setCarregando(false);
+    }
+  }, [feed, proximoOffset]);
+
+  // Quando o fim da lista chega a ~600px da tela, pede a próxima página.
+  // Recria o observer a cada página: se o fim continuar visível (tela
+  // alta, página curta), ele dispara de novo e continua carregando.
+  useEffect(() => {
+    const el = sentinela.current;
+    if (!el || !feed || !temMais || erroAoCarregar) return;
+    const observer = new IntersectionObserver(
+      ([entrada]) => {
+        if (entrada.isIntersecting) carregarMais();
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [carregarMais, feed, temMais, erroAoCarregar]);
+
   const [overrides, setOverrides] = useState<Record<string, Estado>>({});
   const [abertoId, setAbertoId] = useState<string | null>(null);
   // Continua exibindo o último artigo durante a animação de saída
@@ -46,7 +104,6 @@ export function ArticleList({
       setAbertoId(a.id);
       setExibidoId(a.id);
       linhas.current.get(a.id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      // A Feedly marca como lido ao abrir
       if (!estadoDe(a).lido) alterar(a, { lido: true });
     },
     [alterar, estadoDe],
@@ -60,8 +117,10 @@ export function ArticleList({
     (delta: number) => {
       const proximo = artigos[indiceAberto + delta] ?? (indiceAberto < 0 ? artigos[0] : null);
       if (proximo) abrir(proximo);
+      // j no último item já carregado: busca a próxima página
+      if (delta > 0 && indiceAberto >= artigos.length - 3 && temMais) carregarMais();
     },
-    [abrir, artigos, indiceAberto],
+    [abrir, artigos, indiceAberto, temMais, carregarMais],
   );
 
   useEffect(() => {
@@ -82,15 +141,17 @@ export function ArticleList({
   }, [aberto, alterar, estadoDe, irPara]);
 
   const revisados = artigos.filter((a) => estadoDe(a).lido).length;
+  const chegouAoFim = feed ? !temMais : mostrarFim;
 
   return (
     <>
-      <div className="flex max-w-[720px] flex-col gap-10">
+      <div className="flex max-w-[720px] flex-col gap-8">
         {secoes.map((secao) => (
           <section key={secao.titulo} className="flex flex-col gap-1">
-            <h2 className="mb-2 flex items-center gap-3 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
+            <h2 className="sticky top-0 z-10 -mx-3 mb-1 flex items-center gap-3 bg-background/85 px-3 py-2.5 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase backdrop-blur">
               {secao.titulo}
               <span className="h-px flex-grow bg-border" />
+              <span className="font-normal tracking-normal normal-case">{secao.artigos.length}</span>
             </h2>
             {secao.artigos.map((artigo, i) => (
               <LinhaArtigo
@@ -111,7 +172,23 @@ export function ArticleList({
         ))}
       </div>
 
-      {mostrarFim && artigos.length > 0 && (
+      {feed && temMais && (
+        <div ref={sentinela} className="flex max-w-[720px] flex-col gap-1 pt-2">
+          {erroAoCarregar ? (
+            <button
+              type="button"
+              onClick={carregarMais}
+              className="mx-auto my-6 rounded-lg border border-border px-4 py-2 text-sm text-text-secondary transition hover:bg-surface-hover hover:text-foreground"
+            >
+              Não deu pra carregar mais. Tentar de novo
+            </button>
+          ) : (
+            carregando && [0, 1, 2].map((i) => <LinhaEsqueleto key={i} />)
+          )}
+        </div>
+      )}
+
+      {chegouAoFim && artigos.length > 0 && (
         <div className="mt-12 flex max-w-[720px] flex-col gap-8 pb-10">
           <div className="flex items-center gap-3 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
             Fim do feed
@@ -129,7 +206,7 @@ export function ArticleList({
           estado={estadoDe(exibido)}
           saindo={!aberto}
           temAnterior={indiceAberto > 0}
-          temProximo={indiceAberto >= 0 && indiceAberto < artigos.length - 1}
+          temProximo={indiceAberto >= 0 && (indiceAberto < artigos.length - 1 || temMais)}
           onFechar={() => setAbertoId(null)}
           onSaiu={() => setExibidoId(null)}
           onNavegar={irPara}
@@ -137,6 +214,19 @@ export function ArticleList({
         />
       )}
     </>
+  );
+}
+
+function LinhaEsqueleto() {
+  return (
+    <div className="flex animate-pulse gap-5 py-3.5">
+      <div className="aspect-[16/10] w-[152px] flex-shrink-0 bg-surface-active" />
+      <div className="flex flex-grow flex-col gap-2.5 pt-1">
+        <div className="h-3.5 w-4/5 rounded bg-surface-active" />
+        <div className="h-3 w-2/5 rounded bg-surface-active" />
+        <div className="h-3 w-full rounded bg-surface-hover" />
+      </div>
+    </div>
   );
 }
 
@@ -168,7 +258,7 @@ function LinhaArtigo({
         ativo ? "bg-surface-hover/70" : ""
       }`}
     >
-      <div className="relative aspect-square w-[104px] flex-shrink-0 overflow-hidden rounded-xl bg-surface-active ring-1 ring-border">
+      <div className="relative aspect-[16/10] w-[152px] flex-shrink-0 self-start overflow-hidden bg-surface-active">
         {artigo.image_url ? (
           // <img> simples: as URLs vêm de feeds arbitrários, e liberar
           // qualquer domínio no next/image vira um proxy de imagem aberto
@@ -184,7 +274,7 @@ function LinhaArtigo({
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-accent-soft">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={faviconDe(artigo.fonteHost)} alt="" className="h-9 w-9 rounded-lg" />
+            <img src={faviconDe(artigo.fonteHost)} alt="" className="h-8 w-8" />
           </div>
         )}
       </div>

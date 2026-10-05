@@ -1,7 +1,6 @@
 import Link from "next/link";
-import type { Secao, Sugestao } from "@/lib/feed";
+import type { Sugestao } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
-import { ArticleList } from "./ArticleList";
 import { Icon } from "./Icon";
 
 export function Conteudo({ children, largo = false }: { children: React.ReactNode; largo?: boolean }) {
@@ -13,52 +12,64 @@ export function Conteudo({ children, largo = false }: { children: React.ReactNod
 }
 
 export function FeedComSugestoes({
-  secoes,
+  lista,
   sugestoes,
-  vazio,
+  categoria,
 }: {
-  secoes: Secao[];
+  lista: React.ReactNode;
   sugestoes: Sugestao[];
-  vazio: React.ReactNode;
+  /** Quando vem, as sugestões são só dessa categoria (a da coleção atual). */
+  categoria?: string | null;
 }) {
+  const hrefExplorar = categoria ? `/explorar?categoria=${encodeURIComponent(categoria)}` : "/explorar";
   return (
     <div className="flex gap-14">
-      <div className="min-w-0 flex-grow">
-        {secoes.length === 0 ? vazio : <ArticleList secoes={secoes} mostrarFim />}
-      </div>
-      {sugestoes.length > 0 && (
-        <aside className="hidden w-[220px] flex-shrink-0 lg:block">
-          <div className="sticky top-6 flex flex-col gap-4">
-            <h2 className="text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">Você também pode gostar</h2>
-            {sugestoes.map((s) => (
-              <Link
-                key={s.id}
-                href={`/explorar?categoria=${encodeURIComponent(s.categoria)}`}
-                className="group flex items-center gap-3"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={faviconDe(s.host)}
-                  alt=""
-                  className="aspect-square h-10 w-10 flex-shrink-0 rounded-xl bg-surface-active p-1.5 ring-1 ring-border transition-transform duration-150 group-hover:scale-105"
-                />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-foreground group-hover:underline">
-                    {s.nome}
-                  </div>
-                  <div className="truncate text-xs text-text-muted">{s.categoria}</div>
-                </div>
-              </Link>
-            ))}
+      <div className="min-w-0 flex-grow">{lista}</div>
+      <aside className="hidden w-[230px] flex-shrink-0 lg:block">
+        <div className="sticky top-6 flex flex-col gap-4">
+          <h2 className="text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
+            {categoria ? (
+              <>
+                Mais em <span className="text-accent">#{categoria.toLowerCase()}</span>
+              </>
+            ) : (
+              "Você também pode gostar"
+            )}
+          </h2>
+          {sugestoes.length === 0 && (
+            <p className="text-xs leading-relaxed text-text-muted">
+              {categoria
+                ? `Você já segue todas as fontes de #${categoria.toLowerCase()} do catálogo.`
+                : "Nada novo no catálogo por enquanto."}
+            </p>
+          )}
+          {sugestoes.map((s, i) => (
             <Link
-              href="/explorar"
-              className="w-fit rounded-md border border-border px-2.5 py-1 text-sm text-foreground transition-colors hover:bg-surface-hover"
+              key={s.id}
+              href={`/explorar?categoria=${encodeURIComponent(s.categoria)}`}
+              style={{ animationDelay: `${i * 40}ms` }}
+              className="animate-fade-up group flex items-center gap-3"
             >
-              Explorar
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={faviconDe(s.host)}
+                alt=""
+                className="aspect-square h-10 w-10 flex-shrink-0 rounded-xl bg-surface-active p-1.5 ring-1 ring-border transition-transform duration-150 group-hover:scale-105"
+              />
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-foreground group-hover:text-accent">{s.nome}</div>
+                <div className="truncate text-xs text-text-muted">{s.descricao ?? s.host}</div>
+              </div>
             </Link>
-          </div>
-        </aside>
-      )}
+          ))}
+          <Link
+            href={hrefExplorar}
+            className="w-fit rounded-lg border border-border px-3 py-1.5 text-xs text-foreground transition-colors hover:border-accent/50 hover:bg-surface-hover"
+          >
+            {categoria ? `Explorar #${categoria.toLowerCase()}` : "Explorar"}
+          </Link>
+        </div>
+      </aside>
     </div>
   );
 }
