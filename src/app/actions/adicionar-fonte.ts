@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DESCRICAO_VIA, detectarFonte, type FonteDetectada } from "@/lib/descobrir-fonte";
 import { coletarFonte } from "@/lib/leitor-feeds";
 import { nomeDaFonte } from "@/lib/fonte";
+import { dispararColetaDaFonte } from "@/lib/github";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -128,6 +129,9 @@ export async function adicionarFonte(pedido: {
   } catch {
     // segue sem as notícias de agora
   }
+
+  // Coleta completa + resumo da IA no GitHub Actions (se configurado)
+  await dispararColetaDaFonte(criada.id);
 
   revalidatePath("/", "layout");
   return {

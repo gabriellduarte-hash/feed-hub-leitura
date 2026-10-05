@@ -272,8 +272,8 @@ export function urlGoogleNews(urlSite: string) {
   return `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
 }
 
-function rotuloDoSite(urlSite: string) {
-  return new URL(urlSite).hostname.replace(/^www\./, "").split(".")[0];
+function semWww(host: string) {
+  return host.toLowerCase().replace(/^www\./, "");
 }
 
 /** Notícias de um RSS/Atom. No Google Notícias, só as do site pedido. */
@@ -283,10 +283,11 @@ export async function lerFeed(url: string): Promise<{ lido: FeedLido; noticias: 
   if (!lido || (lido.formato !== "rss" && lido.formato !== "atom")) return null;
   let noticias = lido.noticias;
   if (ehGoogleNews(url)) {
-    const site = new URL(url).searchParams.get("q")?.replace(/^site:/, "") ?? "";
-    const rotulo = rotuloDoSite(`https://${site}`);
+    // Só as do próprio site: domínio igual, ignorando "www." — a busca
+    // "site:" também traz subdomínios (ex.: o fórum forum.adrenaline.com.br)
+    const site = semWww((new URL(url).searchParams.get("q") ?? "").replace(/^site:/, "").split("/")[0]);
     noticias = noticias
-      .filter((_, i) => (lido.origens[i] ? new URL(lido.origens[i]).hostname.includes(rotulo) : false))
+      .filter((_, i) => (lido.origens[i] ? semWww(new URL(lido.origens[i]).hostname) === site : false))
       .map((n) => ({ ...n, title: tituloSemSite(n.title), content: null }));
   }
   return { lido, noticias: maisRecentes(noticias) };
@@ -331,5 +332,18 @@ export async function lerPagina(url: string): Promise<Noticia[]> {
 export async function coletarFonte(url: string, tipo: string): Promise<Noticia[]> {
   if (tipo === "sitemap") return lerSitemap(url);
   if (tipo === "scrape") return lerPagina(url);
-  return (await lerFeed(url))?.noticias ?? [];
+  let noticias: Noticia[] = [];
+  try {
+    noticias = (await lerFeed(url))?.noticias ?? [];
+  } catch {
+    // cai no plano B abaixo
+  }
+  // Plano B, igual ao coletor em Python: alguns sites (ex.: Adrenaline)
+  // respondem 403 pra servidores de nuvem, inclusive a Vercel. O Google
+  // Notícias do mesmo site não depende do site responder.
+  if (noticias.length === 0 && !ehGoogleNews(url)) {
+    const u = new URL(url);
+    noticias = (await lerFeed(urlGoogleNews(`${u.protocol}//${u.host}`)).catch(() => null))?.noticias ?? [];
+  }
+  return noticias;
 }

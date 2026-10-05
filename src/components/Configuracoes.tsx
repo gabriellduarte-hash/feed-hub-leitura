@@ -1,8 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import {
+  adicionarDestinatario,
+  carregarResumo,
+  removerDestinatario,
+  salvarConfigResumo,
+  type ConfigResumo,
+  type Destinatario,
+} from "@/app/actions/resumo";
 import { createClient } from "@/lib/supabase/client";
 import { usePreferencias } from "@/lib/usePreferencias";
 import type { Preferencias } from "@/lib/preferencias";
@@ -40,7 +47,9 @@ const SECOES: { id: Secao; rotulo: string; icone: NomeIcone }[] = [
   { id: "atalhos", rotulo: "Atalhos de teclado", icone: "comando" },
 ];
 
-export function Configuracoes({ email, perfil }: { email: string; perfil: Perfil }) {
+type Colecao = { id: string; nome: string };
+
+export function Configuracoes({ email, perfil, colecoes }: { email: string; perfil: Perfil; colecoes: Colecao[] }) {
   const [secao, setSecao] = useState<Secao | null>(null);
 
   useEffect(() => {
@@ -93,7 +102,7 @@ export function Configuracoes({ email, perfil }: { email: string; perfil: Perfil
             {secao === "aparencia" && <SecaoAparencia />}
             {secao === "perfil" && <SecaoPerfil email={email} perfil={perfil} />}
             {secao === "acesso" && <SecaoAcesso />}
-            {secao === "resumo" && <SecaoResumo email={email} fechar={() => setSecao(null)} />}
+            {secao === "resumo" && <SecaoResumo email={email} colecoes={colecoes} />}
             {secao === "atalhos" && <SecaoAtalhos />}
           </div>
         </div>
@@ -383,22 +392,191 @@ function SecaoAcesso() {
   );
 }
 
-function SecaoResumo({ email, fechar }: { email: string; fechar: () => void }) {
+function SecaoResumo({ email, colecoes }: { email: string; colecoes: Colecao[] }) {
+  const [dados, setDados] = useState<{ config: ConfigResumo; destinatarios: Destinatario[]; limite: number } | null>(null);
+  const [falhou, setFalhou] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+    carregarResumo()
+      .then((r) => ativo && setDados(r))
+      .catch(() => ativo && setFalhou(true));
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  if (falhou) return <p className="text-sm text-red-500">Não foi possível carregar as configurações do resumo.</p>;
+  if (!dados) return <p className="animate-pulse text-sm text-text-muted">Carregando…</p>;
+  return <FormResumo email={email} colecoes={colecoes} inicial={dados} />;
+}
+
+function FormResumo({
+  email,
+  colecoes,
+  inicial,
+}: {
+  email: string;
+  colecoes: Colecao[];
+  inicial: { config: ConfigResumo; destinatarios: Destinatario[]; limite: number };
+}) {
+  const [config, setConfig] = useState(inicial.config);
+  const [destinatarios, setDestinatarios] = useState(inicial.destinatarios);
+  const [novoEmail, setNovoEmail] = useState("");
+  const [erro, setErro] = useState<string | null>(null);
+  const [erroLista, setErroLista] = useState<string | null>(null);
+  const [salvando, startSalvar] = useTransition();
+  const [mexendoLista, startLista] = useTransition();
+  const todas = config.topicIds === null;
+
+  function alternarColecao(id: string) {
+    const atual = new Set(config.topicIds ?? []);
+    if (atual.has(id)) atual.delete(id);
+    else atual.add(id);
+    setConfig({ ...config, topicIds: [...atual] });
+  }
+
+  function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    startSalvar(async () => {
+      const r = await salvarConfigResumo(config);
+      if (r.erro) setErro(r.erro);
+      else mostrarToast("Resumo diário salvo");
+    });
+  }
+
+  function adicionar(e: React.FormEvent) {
+    e.preventDefault();
+    setErroLista(null);
+    startLista(async () => {
+      const r = await adicionarDestinatario(novoEmail);
+      if (r.erro || !r.destinatario) return setErroLista(r.erro ?? "Não deu pra adicionar.");
+      setDestinatarios((d) => [...d, r.destinatario!]);
+      setNovoEmail("");
+    });
+  }
+
+  function remover(d: Destinatario) {
+    startLista(async () => {
+      const r = await removerDestinatario(d.id);
+      if (r.erro) return setErroLista(r.erro);
+      setDestinatarios((lista) => lista.filter((x) => x.id !== d.id));
+    });
+  }
+
   return (
-    <Grupo
-      titulo="Resumo diário por e-mail"
-      descricao="Todo dia às 6h (horário de Brasília), a IA resume os artigos novos das suas fontes, agrupados por categoria."
-    >
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 text-[13px] text-text-secondary">
-        <span>
-          Destinatário principal: <b className="text-foreground">{email}</b>
-        </span>
-        <span>Você pode mandar o mesmo resumo para até 10 pessoas.</span>
-        <Link href="/compartilhar" onClick={fechar} className="w-fit text-accent hover:underline">
-          Gerenciar destinatários →
-        </Link>
-      </div>
-    </Grupo>
+    <>
+      <form onSubmit={salvar} className="flex flex-col gap-8">
+        <Grupo titulo="Resumo diário por e-mail" descricao="A IA resume os artigos novos das últimas 24h, agrupados por categoria.">
+          <Chave
+            rotulo="Receber o resumo diário"
+            ligado={config.ativo}
+            onChange={(ativo) => setConfig({ ...config, ativo })}
+          />
+        </Grupo>
+
+        <div className={`flex flex-col gap-8 transition-opacity ${config.ativo ? "" : "pointer-events-none opacity-40"}`}>
+          <Grupo titulo="Horário de envio" descricao="Horário de Brasília. Pode chegar alguns minutos depois.">
+            <select
+              value={config.horaEnvio}
+              onChange={(e) => setConfig({ ...config, horaEnvio: Number(e.target.value) })}
+              className={`${campo} w-44`}
+            >
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>
+                  {String(h).padStart(2, "0")}:00
+                </option>
+              ))}
+            </select>
+          </Grupo>
+
+          <Grupo titulo="Coleções no resumo">
+            <Opcoes<"todas" | "escolher">
+              valor={todas ? "todas" : "escolher"}
+              onChange={(v) => setConfig({ ...config, topicIds: v === "todas" ? null : colecoes.map((c) => c.id) })}
+              opcoes={[
+                { valor: "todas", rotulo: "Todas as coleções" },
+                { valor: "escolher", rotulo: "Só as que eu escolher" },
+              ]}
+            />
+            {!todas && (
+              <div className="animate-fade-up ml-7 flex flex-col gap-2">
+                {colecoes.length === 0 && <span className="text-sm text-text-muted">Você ainda não tem coleções.</span>}
+                {colecoes.map((c) => (
+                  <label key={c.id} className="flex cursor-pointer items-center gap-3 text-[14px] text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={config.topicIds?.includes(c.id) ?? false}
+                      onChange={() => alternarColecao(c.id)}
+                      className="h-4 w-4 accent-[var(--accent)]"
+                    />
+                    {c.nome}
+                  </label>
+                ))}
+              </div>
+            )}
+          </Grupo>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <BotaoSalvar pendente={salvando}>Salvar</BotaoSalvar>
+          {erro && <span className="text-sm text-red-500">{erro}</span>}
+        </div>
+      </form>
+
+      <Grupo
+        titulo="Quem recebe"
+        descricao={`Você sempre recebe. Pode mandar o mesmo resumo pra até ${inicial.limite} pessoas.`}
+      >
+        <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+          <div className="flex items-center justify-between px-4 py-3 text-[14px]">
+            <span className="truncate text-foreground">{email}</span>
+            <span className="text-xs text-text-muted">você</span>
+          </div>
+          {destinatarios.map((d) => (
+            <div key={d.id} className="animate-fade-up group flex items-center justify-between px-4 py-2.5 text-[14px]">
+              <span className="truncate text-foreground">{d.email}</span>
+              <button
+                type="button"
+                onClick={() => remover(d)}
+                disabled={mexendoLista}
+                aria-label={`Remover ${d.email}`}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-hover hover:text-red-500"
+              >
+                <Icon nome="lixeira" tamanho={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+        {destinatarios.length < inicial.limite ? (
+          <form onSubmit={adicionar} className="flex gap-2">
+            <input
+              type="email"
+              value={novoEmail}
+              onChange={(e) => setNovoEmail(e.target.value)}
+              placeholder="email@exemplo.com"
+              className={campo}
+              required
+            />
+            <button
+              type="submit"
+              disabled={mexendoLista}
+              className="h-11 flex-shrink-0 rounded-lg border border-border px-4 text-sm text-foreground transition hover:bg-surface-hover disabled:opacity-60"
+            >
+              Adicionar
+            </button>
+          </form>
+        ) : (
+          <p className="text-xs text-text-muted">Limite de {inicial.limite} destinatários atingido.</p>
+        )}
+        {erroLista && <p className="text-sm text-red-500">{erroLista}</p>}
+        <p className="text-xs leading-relaxed text-text-muted">
+          Enquanto o domínio de envio não for verificado no Resend, só o e-mail da conta Resend recebe de verdade. Os
+          outros ficam na lista e passam a receber quando o domínio for configurado.
+        </p>
+      </Grupo>
+    </>
   );
 }
 

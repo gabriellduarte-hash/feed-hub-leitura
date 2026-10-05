@@ -41,7 +41,11 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
       <main className="relative min-w-0 flex-grow overflow-y-auto">{children}</main>
 
       {irParaAberto && <IrPara dados={dados} onFechar={() => setIrParaAberto(false)} />}
-      <Configuracoes email={dados.email} perfil={dados.perfil} />
+      <Configuracoes
+        email={dados.email}
+        perfil={dados.perfil}
+        colecoes={dados.colecoes.map((c) => ({ id: c.id, nome: c.nome }))}
+      />
       <Toaster />
     </div>
   );

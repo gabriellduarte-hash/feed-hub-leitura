@@ -159,13 +159,16 @@ export function Sidebar({
       {!recolhido && <SubmenuColecoes dados={dados} pathname={pathname} />}
 
       <div className="mt-auto flex flex-col gap-0.5 pt-6">
-        <ItemNav
-          href="/compartilhar"
-          icone="enviar"
-          rotulo="Compartilhar resumo"
-          recolhido={recolhido}
-          ativo={pathname.startsWith("/compartilhar")}
-        />
+        <button
+          type="button"
+          onClick={() => abrirConfiguracoes("resumo")}
+          aria-label="Resumo diário"
+          data-dica={recolhido ? "Resumo diário" : undefined}
+          className={`${classeItem} ${classeEstado(false)} ${recolhido ? "dica" : ""}`}
+        >
+          <Icon nome="enviar" tamanho={22} className="flex-shrink-0 transition-transform duration-150 group-hover:scale-110" />
+          {!recolhido && <span className="truncate">Resumo diário</span>}
+        </button>
         <div className="mt-2">
           <Menu
             largura="w-64"
