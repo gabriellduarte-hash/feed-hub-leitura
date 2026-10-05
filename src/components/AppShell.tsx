@@ -6,6 +6,7 @@ import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { Sidebar, type DadosSidebar } from "./Sidebar";
+import { Configuracoes } from "./Configuracoes";
 import { Toaster } from "./Toast";
 
 export function AppShell({ dados, children }: { dados: DadosSidebar; children: React.ReactNode }) {
@@ -40,6 +41,7 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
       <main className="relative min-w-0 flex-grow overflow-y-auto">{children}</main>
 
       {irParaAberto && <IrPara dados={dados} onFechar={() => setIrParaAberto(false)} />}
+      <Configuracoes email={dados.email} perfil={dados.perfil} />
       <Toaster />
     </div>
   );

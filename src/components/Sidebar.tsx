@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useTransition } from "react";
 import { criarColecao } from "@/app/actions/fontes";
+import { marcarTudoComoLido } from "@/app/actions/artigos";
 import { createClient } from "@/lib/supabase/client";
 import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { ItemMenu, Menu, SeparadorMenu } from "./Menu";
 import { ItensMenuColecao, ItensMenuFonte } from "./MenusFonte";
-import { ThemeToggle } from "./ThemeToggle";
+import { abrirConfiguracoes, estiloAvatar } from "./Configuracoes";
 import { mostrarToast } from "./Toast";
 
 export type FonteSidebar = {
@@ -29,10 +30,13 @@ export type ColecaoSidebar = {
   fontes: FonteSidebar[];
 };
 
+export type Perfil = { nome: string; sobrenome: string; cor: string };
+
 export type DadosSidebar = {
   colecoes: ColecaoSidebar[];
   totalNaoLidos: number;
   email: string;
+  perfil: Perfil;
 };
 
 /* Item do menu: ícone grande + nome (aberto) ou só o ícone com dica (recolhido). */
@@ -65,7 +69,7 @@ export function Sidebar({
     router.refresh();
   }
 
-  const nome = dados.email.split("@")[0];
+  const nome = [dados.perfil.nome, dados.perfil.sobrenome].filter(Boolean).join(" ") || dados.email.split("@")[0];
 
   return (
     <nav
@@ -162,18 +166,6 @@ export function Sidebar({
           recolhido={recolhido}
           ativo={pathname.startsWith("/compartilhar")}
         />
-        <ItemNav
-          href="/fontes"
-          icone="organizar"
-          rotulo="Organizar fontes"
-          recolhido={recolhido}
-          ativo={pathname.startsWith("/fontes")}
-        />
-        <ThemeToggle
-          mostrarRotulo={!recolhido}
-          className={`${classeItem} ${classeEstado(false)} ${recolhido ? "dica" : ""}`}
-        />
-
         <div className="mt-2">
           <Menu
             largura="w-64"
@@ -183,7 +175,10 @@ export function Sidebar({
             }`}
             gatilho={
               <>
-                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-fuchsia-500 text-sm font-bold text-white">
+                <span
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                  style={estiloAvatar(dados.perfil.cor)}
+                >
                   {(nome.charAt(0) || "?").toUpperCase()}
                 </span>
                 {!recolhido && (
@@ -200,14 +195,38 @@ export function Sidebar({
           >
             {(fechar) => (
               <>
-                <div className="truncate px-3 py-2 text-xs text-text-muted">{dados.email}</div>
+                <div className="flex flex-col px-3 py-2">
+                  <span className="truncate text-sm font-semibold text-foreground">{nome}</span>
+                  <span className="truncate text-xs text-text-muted">{dados.email}</span>
+                </div>
                 <SeparadorMenu />
-                <LinkMenu href="/fontes" fechar={fechar}>
-                  Organizar fontes
-                </LinkMenu>
-                <LinkMenu href="/compartilhar" fechar={fechar}>
-                  Compartilhar resumo diário
-                </LinkMenu>
+                <ItemMenu
+                  icone="lapis"
+                  onClick={() => {
+                    fechar();
+                    abrirConfiguracoes("perfil");
+                  }}
+                >
+                  Editar perfil
+                </ItemMenu>
+                <ItemMenu
+                  icone="organizar"
+                  onClick={() => {
+                    fechar();
+                    abrirConfiguracoes("geral");
+                  }}
+                >
+                  Configurações
+                </ItemMenu>
+                <ItemMenu
+                  icone="sol"
+                  onClick={() => {
+                    fechar();
+                    abrirConfiguracoes("aparencia");
+                  }}
+                >
+                  Aparência e tema
+                </ItemMenu>
                 <SeparadorMenu />
                 <ItemMenu icone="sair" onClick={sair}>
                   Sair
@@ -286,26 +305,80 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
     });
   }
 
+  function marcarTodasLidas() {
+    if (!window.confirm("Marcar todos os artigos de todas as coleções como lidos?")) return;
+    startTransition(async () => {
+      await marcarTudoComoLido({ tipo: "todos" });
+      mostrarToast("Tudo marcado como lido");
+    });
+  }
+
   const aberto = submenuAberto === "1";
+  const todasFechadas = dados.colecoes.length > 0 && dados.colecoes.every((c) => fechadas.has(c.id));
   const colecoesMenu = dados.colecoes.map((c) => ({ id: c.id, nome: c.nome }));
   const favoritas = dados.colecoes.flatMap((c) => c.fontes).filter((f) => f.favorita);
 
   return (
     <div className="animate-aparece mt-6 flex flex-col text-[13px]">
-      <button
-        type="button"
-        onClick={() => setSubmenuAberto(aberto ? "0" : "1")}
-        aria-expanded={aberto}
-        className="group mb-1 flex h-8 items-center gap-2 rounded-lg px-2 text-[11px] font-semibold tracking-[0.12em] text-text-muted uppercase transition-colors hover:text-foreground"
-      >
-        <Icon
-          nome="chevronBaixo"
-          tamanho={14}
-          className={`transition-transform duration-200 ${aberto ? "" : "-rotate-90"}`}
-        />
-        Coleções
+      <div className="group mb-1 flex h-8 items-center rounded-lg">
+        <button
+          type="button"
+          onClick={() => setSubmenuAberto(aberto ? "0" : "1")}
+          aria-expanded={aberto}
+          className="flex h-8 min-w-0 flex-grow items-center gap-2 px-2 text-[11px] font-semibold tracking-[0.12em] text-text-muted uppercase transition-colors hover:text-foreground"
+        >
+          <Icon
+            nome="chevronBaixo"
+            tamanho={14}
+            className={`transition-transform duration-200 ${aberto ? "" : "-rotate-90"}`}
+          />
+          Coleções
+        </button>
+        <div className="opacity-0 transition-opacity group-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100">
+          <Menu
+            rotulo="Opções das coleções"
+            gatilho={<Icon nome="mais" tamanho={16} />}
+            classeGatilho={classeAcaoLinha}
+          >
+            {(fechar) => (
+              <>
+                <ItemMenu
+                  icone="lista"
+                  onClick={() => {
+                    fechar();
+                    novaColecao();
+                  }}
+                >
+                  Nova coleção
+                </ItemMenu>
+                <LinkMenu href="/fontes" fechar={fechar} icone="organizar">
+                  Organizar fontes
+                </LinkMenu>
+                <ItemMenu
+                  icone="check"
+                  onClick={() => {
+                    fechar();
+                    marcarTodasLidas();
+                  }}
+                >
+                  Marcar tudo como lido
+                </ItemMenu>
+                <SeparadorMenu />
+                <ItemMenu
+                  icone="chevronBaixo"
+                  onClick={() => {
+                    fechar();
+                    setFechadasJson(JSON.stringify(todasFechadas ? [] : dados.colecoes.map((c) => c.id)));
+                  }}
+                >
+                  {todasFechadas ? "Expandir todas" : "Recolher todas"}
+                </ItemMenu>
+              </>
+            )}
+          </Menu>
+        </div>
         <Contador valor={dados.totalNaoLidos} destaque />
-      </button>
+      </div>
 
       <div
         className={`grid transition-[grid-template-rows] duration-200 ease-out ${aberto ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
@@ -397,32 +470,23 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
           })}
 
           <Menu
-            rotulo="Adicionar mais"
-            largura="w-60"
+            rotulo="Adicionar fonte"
+            largura="w-64"
             classeGatilho="mt-1 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-accent transition-colors hover:bg-accent-soft"
             gatilho={
               <>
                 <Icon nome="adicionar" tamanho={16} />
-                Adicionar mais
+                Adicionar fonte
               </>
             }
           >
             {(fechar) => (
               <>
-                <ItemMenu
-                  icone="lista"
-                  onClick={() => {
-                    fechar();
-                    novaColecao();
-                  }}
-                >
-                  Nova coleção
-                </ItemMenu>
                 <LinkMenu href="/explorar" fechar={fechar} icone="rss">
-                  Seguir fontes do catálogo
+                  Escolher no catálogo
                 </LinkMenu>
                 <LinkMenu href="/explorar?aba=url" fechar={fechar} icone="link">
-                  Seguir por URL ou RSS
+                  Colar o endereço de um site
                 </LinkMenu>
               </>
             )}

@@ -5,6 +5,7 @@ import { agruparPorDia, type ArtigoLista, type FiltroPagina, type Secao } from "
 import { faviconDe } from "@/lib/fonte";
 import { definirLido, definirSalvo } from "@/app/actions/artigos";
 import { carregarMaisArtigos } from "@/app/actions/paginacao";
+import { usePreferencias } from "@/lib/usePreferencias";
 import { Icon } from "./Icon";
 import { ArticlePanel } from "./ArticlePanel";
 
@@ -36,10 +37,21 @@ export function ArticleList({
     const vistos = new Set<string>();
     return [...feed.artigos, ...extras].filter((a) => !vistos.has(a.id) && vistos.add(a.id));
   }, [feed, extras, secoesFixas]);
-  const secoes = useMemo(
-    () => (feed ? agruparPorDia(artigos) : (secoesFixas ?? [])),
-    [feed, artigos, secoesFixas],
+  // "Esconder lidos" (Configurações) esconde o que já chegou lido do
+  // servidor; o que você leu agora continua na tela até recarregar, pra
+  // lista não pular enquanto você lê.
+  const [preferencias] = usePreferencias();
+  const [overrides, setOverrides] = useState<Record<string, Estado>>({});
+  const visivel = useCallback(
+    (a: ArtigoLista) => !preferencias.esconderLidos || !a.lido || a.id in overrides,
+    [preferencias.esconderLidos, overrides],
   );
+  const secoes = useMemo(() => {
+    const base = feed ? agruparPorDia(artigos) : (secoesFixas ?? []);
+    return base
+      .map((s) => ({ ...s, artigos: s.artigos.filter(visivel) }))
+      .filter((s) => s.artigos.length > 0);
+  }, [feed, artigos, secoesFixas, visivel]);
   const proximoOffset = (feed?.artigos.length ?? 0) + extras.length;
 
   const carregarMais = useCallback(async () => {
@@ -75,7 +87,6 @@ export function ArticleList({
     return () => observer.disconnect();
   }, [carregarMais, feed, temMais, erroAoCarregar]);
 
-  const [overrides, setOverrides] = useState<Record<string, Estado>>({});
   const [abertoId, setAbertoId] = useState<string | null>(null);
   // Continua exibindo o último artigo durante a animação de saída
   const [exibidoId, setExibidoId] = useState<string | null>(null);
@@ -104,23 +115,25 @@ export function ArticleList({
       setAbertoId(a.id);
       setExibidoId(a.id);
       linhas.current.get(a.id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      if (a.origem === "usuario" && !estadoDe(a).lido) alterar(a, { lido: true });
+      if (preferencias.marcarLidoAoAbrir && a.origem === "usuario" && !estadoDe(a).lido) alterar(a, { lido: true });
     },
-    [alterar, estadoDe],
+    [alterar, estadoDe, preferencias.marcarLidoAoAbrir],
   );
 
-  const indiceAberto = abertoId ? artigos.findIndex((a) => a.id === abertoId) : -1;
-  const aberto = indiceAberto >= 0 ? artigos[indiceAberto] : null;
+  // j/k e as setas do painel andam só pelo que está visível na lista
+  const navegaveis = useMemo(() => secoes.flatMap((sec) => sec.artigos), [secoes]);
+  const indiceAberto = abertoId ? navegaveis.findIndex((a) => a.id === abertoId) : -1;
+  const aberto = indiceAberto >= 0 ? navegaveis[indiceAberto] : null;
   const exibido = artigos.find((a) => a.id === exibidoId) ?? null;
 
   const irPara = useCallback(
     (delta: number) => {
-      const proximo = artigos[indiceAberto + delta] ?? (indiceAberto < 0 ? artigos[0] : null);
+      const proximo = navegaveis[indiceAberto + delta] ?? (indiceAberto < 0 ? navegaveis[0] : null);
       if (proximo) abrir(proximo);
       // j no último item já carregado: busca a próxima página
-      if (delta > 0 && indiceAberto >= artigos.length - 3 && temMais) carregarMais();
+      if (delta > 0 && indiceAberto >= navegaveis.length - 3 && temMais) carregarMais();
     },
-    [abrir, artigos, indiceAberto, temMais, carregarMais],
+    [abrir, navegaveis, indiceAberto, temMais, carregarMais],
   );
 
   useEffect(() => {
@@ -206,7 +219,7 @@ export function ArticleList({
           estado={estadoDe(exibido)}
           saindo={!aberto}
           temAnterior={indiceAberto > 0}
-          temProximo={indiceAberto >= 0 && (indiceAberto < artigos.length - 1 || temMais)}
+          temProximo={indiceAberto >= 0 && (indiceAberto < navegaveis.length - 1 || temMais)}
           onFechar={() => setAbertoId(null)}
           onSaiu={() => setExibidoId(null)}
           onNavegar={irPara}
@@ -219,8 +232,8 @@ export function ArticleList({
 
 function LinhaEsqueleto() {
   return (
-    <div className="flex animate-pulse gap-5 py-3.5">
-      <div className="aspect-[16/10] w-[152px] flex-shrink-0 bg-surface-active" />
+    <div className="flex animate-pulse gap-5 py-[var(--linha-py)]">
+      <div className="aspect-[16/10] w-[var(--capa-largura)] flex-shrink-0 bg-surface-active" />
       <div className="flex flex-grow flex-col gap-2.5 pt-1">
         <div className="h-3.5 w-4/5 rounded bg-surface-active" />
         <div className="h-3 w-2/5 rounded bg-surface-active" />
@@ -254,11 +267,11 @@ function LinhaArtigo({
       ref={registrar}
       onClick={onAbrir}
       style={{ animationDelay: `${atraso}ms` }}
-      className={`animate-fade-up group relative -mx-3 flex cursor-pointer gap-5 rounded-xl px-3 py-3.5 transition-colors duration-150 hover:bg-surface-hover/70 ${
+      className={`animate-fade-up group relative -mx-3 flex cursor-pointer gap-5 rounded-xl px-3 py-[var(--linha-py)] transition-colors duration-150 hover:bg-surface-hover/70 ${
         ativo ? "bg-surface-hover/70" : ""
       }`}
     >
-      <div className="relative aspect-[16/10] w-[152px] flex-shrink-0 self-start overflow-hidden bg-surface-active">
+      <div className="relative aspect-[16/10] w-[var(--capa-largura)] flex-shrink-0 self-start overflow-hidden bg-surface-active">
         {artigo.image_url ? (
           // <img> simples: as URLs vêm de feeds arbitrários, e liberar
           // qualquer domínio no next/image vira um proxy de imagem aberto

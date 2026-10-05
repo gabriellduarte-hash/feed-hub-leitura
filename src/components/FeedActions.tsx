@@ -9,6 +9,7 @@ import { Icon, type NomeIcone } from "./Icon";
 import { Menu } from "./Menu";
 import { ItensMenuColecao, ItensMenuFonte, type ColecaoMenu, type FonteMenu } from "./MenusFonte";
 import { mostrarToast } from "./Toast";
+import { usePreferencias } from "@/lib/usePreferencias";
 
 const classeBotao =
   "relative flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition hover:bg-surface-hover hover:text-foreground active:scale-90";
@@ -30,7 +31,10 @@ export function FeedActions({
   const [pendente, startTransition] = useTransition();
   const [girando, setGirando] = useState(false);
 
+  const [preferencias] = usePreferencias();
+
   function marcarTudo() {
+    if (preferencias.confirmarMarcarTudo && !window.confirm(`Marcar ${naoLidos ?? "todos os"} artigos como lidos?`)) return;
     startTransition(async () => {
       await marcarTudoComoLido(escopo);
       mostrarToast("Tudo marcado como lido");

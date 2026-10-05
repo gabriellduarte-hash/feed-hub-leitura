@@ -1,12 +1,20 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import Link from "next/link";
+import { useState, useTransition } from "react";
+import { adicionarFonte, type ResultadoAdicionar } from "@/app/actions/adicionar-fonte";
 import { Icon } from "@/components/Icon";
 import { ItemMenu, Menu, SeparadorMenu } from "@/components/Menu";
 import { mostrarToast } from "@/components/Toast";
-import { seguirFeedDoCatalogo, seguirPorUrl } from "./actions";
 
 type Colecao = { id: string; nome: string };
+
+export function resumoDaAdicao(r: ResultadoAdicionar) {
+  const total = (r.importadas ?? 0) + (r.coletadas ?? 0);
+  return total > 0
+    ? `${total} ${total === 1 ? "notícia carregada" : "notícias carregadas"}`
+    : "sem notícias por enquanto — chegam na próxima coleta";
+}
 
 export function BotaoSeguir({
   catalogoId,
@@ -25,17 +33,14 @@ export function BotaoSeguir({
   const [seguindo, setSeguindo] = useState(false);
 
   function seguir(colecao: Colecao | null) {
-    const dados = new FormData();
-    dados.set("catalog_id", catalogoId);
-    dados.set("topic_id", colecao?.id ?? "");
     setSeguindo(true);
     startTransition(async () => {
-      const resultado = await seguirFeedDoCatalogo(dados);
-      if (resultado?.erro) {
+      const r = await adicionarFonte({ catalogoId, topicId: colecao?.id, novaColecao: categoria });
+      if (r.erro) {
         setSeguindo(false);
-        mostrarToast(resultado.erro);
+        mostrarToast(r.erro);
       } else {
-        mostrarToast(`Seguindo ${nome} em ${colecao?.nome ?? categoria}`);
+        mostrarToast(`Seguindo ${nome} em ${colecao?.nome ?? categoria} · ${resumoDaAdicao(r)}`);
       }
     });
   }
@@ -47,7 +52,7 @@ export function BotaoSeguir({
     return (
       <span className="animate-fade-up flex h-8 items-center gap-1.5 rounded-md border border-border px-3 text-sm text-text-secondary">
         <Icon nome="check" tamanho={15} />
-        {pendente ? "Seguindo..." : "Seguindo"}
+        {pendente ? "Carregando notícias…" : "Seguindo"}
       </span>
     );
   }
@@ -86,50 +91,42 @@ export function BotaoSeguir({
   );
 }
 
-export function SeguirPorUrlForm({
-  colecoes,
-  colecaoPreferida,
-}: {
-  colecoes: Colecao[];
-  colecaoPreferida?: string;
-}) {
-  const [estado, action, pendente] = useActionState(seguirPorUrl, undefined);
+const campo =
+  "h-11 rounded-lg border border-border bg-surface px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-text-muted focus:border-text-muted";
+
+/** Formulário "Por URL": cola qualquer link (site ou RSS) e o hub descobre sozinho. */
+export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Colecao[]; colecaoPreferida?: string }) {
+  const [pendente, startTransition] = useTransition();
+  const [resultado, setResultado] = useState<ResultadoAdicionar | null>(null);
   const [colecao, setColecao] = useState(colecaoPreferida ?? colecoes[0]?.id ?? "");
 
-  const campo =
-    "h-11 rounded-lg border border-border bg-surface px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-text-muted focus:border-text-muted";
+  function enviar(dados: FormData) {
+    setResultado(null);
+    startTransition(async () => {
+      const r = await adicionarFonte({
+        url: String(dados.get("url") ?? ""),
+        nome: String(dados.get("nome") ?? ""),
+        topicId: colecao,
+        novaColecao: String(dados.get("nova_colecao") ?? ""),
+      });
+      setResultado(r);
+    });
+  }
 
   return (
-    <form action={action} className="flex max-w-[620px] flex-col gap-4">
+    <form action={enviar} className="flex max-w-[620px] flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="text-[13px] text-text-secondary">URL do feed RSS ou da página</span>
-        <input name="url" required placeholder="https://site.com.br/feed" className={campo} />
+        <span className="text-[13px] text-text-secondary">Endereço do site ou do feed</span>
+        <input name="url" required placeholder="ex.: tecmundo.com.br ou https://site.com.br/feed" className={campo} />
+        <span className="text-xs text-text-muted">
+          Não precisa saber se é RSS: o hub descobre sozinho (RSS, sitemap de notícias ou Google Notícias).
+        </span>
       </label>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-text-secondary">Nome (opcional)</span>
-          <input name="name" placeholder="Ex.: Meu blog favorito" className={campo} />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-text-secondary">Tipo</span>
-          <select name="type" className={campo}>
-            <option value="rss">Feed RSS</option>
-            <option value="sitemap">Sitemap de notícias (site sem RSS)</option>
-            <option value="scrape">Página (extrair texto)</option>
-          </select>
-        </label>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1.5">
           <span className="text-[13px] text-text-secondary">Coleção</span>
-          <select
-            name="topic_id"
-            value={colecao}
-            onChange={(e) => setColecao(e.target.value)}
-            className={campo}
-          >
+          <select value={colecao} onChange={(e) => setColecao(e.target.value)} className={campo}>
             {colecoes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nome}
@@ -138,25 +135,52 @@ export function SeguirPorUrlForm({
             <option value="">+ Nova coleção</option>
           </select>
         </label>
-        {colecao === "" && (
+        {colecao === "" ? (
           <label className="animate-fade-up flex flex-col gap-1.5">
             <span className="text-[13px] text-text-secondary">Nome da nova coleção</span>
             <input name="nova_colecao" required placeholder="Ex.: Games" className={campo} />
           </label>
+        ) : (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] text-text-secondary">Nome (opcional)</span>
+            <input name="nome" placeholder="Usa o nome do site" className={campo} />
+          </label>
         )}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <button
           type="submit"
           disabled={pendente}
           className="h-10 rounded-lg bg-accent px-5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
         >
-          {pendente ? "Adicionando..." : "Seguir"}
+          {pendente ? "Analisando o site…" : "Seguir"}
         </button>
-        {estado?.erro && <p className="text-sm text-red-500">{estado.erro}</p>}
-        {estado?.ok && <p className="animate-fade-up text-sm text-accent">{estado.ok}</p>}
+        {pendente && (
+          <span className="animate-pulse text-xs text-text-muted">procurando RSS, sitemap e notícias recentes</span>
+        )}
       </div>
+
+      {resultado?.erro && (
+        <p className="animate-fade-up text-sm text-red-500">
+          {resultado.erro}
+          {resultado.fonteId && (
+            <Link href={`/feeds/fonte/${resultado.fonteId}`} className="ml-2 text-accent underline">
+              Ver fonte
+            </Link>
+          )}
+        </p>
+      )}
+      {resultado?.fonteId && !resultado.erro && (
+        <div className="animate-fade-up flex flex-col gap-1 rounded-xl border border-accent/40 bg-accent-soft/50 p-4 text-sm">
+          <span className="font-semibold text-foreground">✓ {resultado.nome} adicionada</span>
+          <span className="text-text-secondary">Detectado: {resultado.como}</span>
+          <span className="text-text-secondary">{resumoDaAdicao(resultado)}</span>
+          <Link href={`/feeds/fonte/${resultado.fonteId}`} className="mt-1 w-fit text-accent hover:underline">
+            Ver notícias →
+          </Link>
+        </div>
+      )}
     </form>
   );
 }

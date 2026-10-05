@@ -7,6 +7,10 @@ import { criarTopico } from "./actions";
 import { BotaoRemoverFonte } from "./BotaoRemoverFonte";
 import { AdicionarFonteForm } from "./AdicionarFonteForm";
 
+// Adicionar fonte detecta o tipo e já coleta as notícias: pode passar dos
+// 10s padrão quando o site é lento (ver docs: route segment config).
+export const maxDuration = 60;
+
 type Topico = {
   id: string;
   name: string;

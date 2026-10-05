@@ -7,6 +7,10 @@ import { Icon, type NomeIcone } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
 import { BotaoSeguir, SeguirPorUrlForm } from "./Seguir";
 
+// Adicionar fonte detecta o tipo e já coleta as notícias: pode passar dos
+// 10s padrão quando o site é lento (ver docs: route segment config).
+export const maxDuration = 60;
+
 type ItemCatalogo = {
   id: string;
   category: string;

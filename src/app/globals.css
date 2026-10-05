@@ -33,6 +33,37 @@
   --overlay: rgba(5, 4, 12, 0.7);
 }
 
+/* Preferências > Aparência: atributos postos no <html> (lib/preferencias.ts) */
+:root {
+  --fonte-leitura: var(--font-technical), ui-monospace, monospace;
+  --tamanho-leitura: 16px;
+  --linha-py: 14px;
+  --capa-largura: 152px;
+}
+[data-fonte="serifa"] {
+  --fonte-leitura: var(--font-serifa), Georgia, serif;
+}
+[data-fonte="sans"] {
+  --fonte-leitura: var(--font-sans-leitura), system-ui, sans-serif;
+}
+[data-tamanho="p"] {
+  --tamanho-leitura: 14px;
+}
+[data-tamanho="g"] {
+  --tamanho-leitura: 18px;
+}
+[data-tamanho="gg"] {
+  --tamanho-leitura: 20px;
+}
+[data-densidade="compacta"] {
+  --linha-py: 7px;
+  --capa-largura: 112px;
+}
+[data-densidade="espacosa"] {
+  --linha-py: 22px;
+  --capa-largura: 184px;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-sidebar: var(--sidebar);

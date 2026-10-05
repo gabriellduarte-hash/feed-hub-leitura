@@ -1,0 +1,45 @@
+/** Preferências do hub (Configurações). Ficam no localStorage do navegador:
+ * são do aparelho, como o tema, e aplicam antes da página aparecer. */
+export type Preferencias = {
+  tema: "sistema" | "claro" | "escuro";
+  fonteLeitura: "mono" | "serifa" | "sans";
+  tamanhoTexto: "p" | "m" | "g" | "gg";
+  densidade: "compacta" | "confortavel" | "espacosa";
+  marcarLidoAoAbrir: boolean;
+  esconderLidos: boolean;
+  confirmarMarcarTudo: boolean;
+};
+
+export const PADRAO: Preferencias = {
+  tema: "escuro",
+  fonteLeitura: "mono",
+  tamanhoTexto: "m",
+  densidade: "confortavel",
+  marcarLidoAoAbrir: true,
+  esconderLidos: false,
+  confirmarMarcarTudo: true,
+};
+
+export const CHAVE = "preferencias";
+
+export function lerPreferencias(texto: string | null): Preferencias {
+  try {
+    return { ...PADRAO, ...(texto ? (JSON.parse(texto) as Partial<Preferencias>) : {}) };
+  } catch {
+    return PADRAO;
+  }
+}
+
+/** Atributos no <html> que o CSS usa (globals.css). Mesma lógica do script abaixo. */
+export function aplicarNoDocumento(p: Preferencias) {
+  const html = document.documentElement;
+  const escuro = p.tema === "escuro" || (p.tema === "sistema" && matchMedia("(prefers-color-scheme: dark)").matches);
+  html.dataset.theme = escuro ? "dark" : "light";
+  html.dataset.fonte = p.fonteLeitura;
+  html.dataset.tamanho = p.tamanhoTexto;
+  html.dataset.densidade = p.densidade;
+}
+
+// Versão em texto de aplicarNoDocumento, pra rodar inline antes do React.
+// Também migra a chave antiga "tema" ("light"/"dark") de antes das Configurações.
+export const SCRIPT_PREFERENCIAS = `try{var p=JSON.parse(localStorage.getItem("${CHAVE}")||"null");if(!p){var t=localStorage.getItem("tema");p=t?{tema:t==="light"?"claro":"escuro"}:{}}var h=document.documentElement,m=p.tema||"${PADRAO.tema}";h.dataset.theme=(m==="escuro"||(m==="sistema"&&matchMedia("(prefers-color-scheme: dark)").matches))?"dark":"light";h.dataset.fonte=p.fonteLeitura||"${PADRAO.fonteLeitura}";h.dataset.tamanho=p.tamanhoTexto||"${PADRAO.tamanhoTexto}";h.dataset.densidade=p.densidade||"${PADRAO.densidade}"}catch(e){}`;

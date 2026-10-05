@@ -241,7 +241,7 @@ export function ArticlePanel({
                   <Icon nome="ia" tamanho={20} className="text-accent" />
                   Resumo
                 </h2>
-                <p className="rounded-r-xl border-l-[3px] border-accent bg-accent-soft/60 py-4 pr-5 pl-5 text-[16px] leading-[1.85] text-foreground">
+                <p className="rounded-r-xl border-l-[3px] border-accent bg-accent-soft/60 py-4 pr-5 pl-5 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.85] text-foreground">
                   {a.ai_summary}
                 </p>
               </section>
@@ -258,7 +258,7 @@ export function ArticlePanel({
             {temTexto && (
               <section>
                 <h2 className="mb-5 text-[22px] font-bold tracking-tight text-foreground">A notícia</h2>
-                <div className="flex flex-col gap-6 text-[16px] leading-[1.9] text-foreground/90">
+                <div className="flex flex-col gap-6 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.9] text-foreground/90">
                   {blocos.map((b, i) =>
                     b.tipo === "h" ? (
                       <h3 key={i} className="mt-4 text-[19px] leading-snug font-bold text-foreground">

@@ -56,6 +56,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         colecoes,
         totalNaoLidos: colecoes.reduce((soma, c) => soma + c.naoLidos, 0),
         email: user?.email ?? "",
+        // nome/sobrenome/cor ficam nos metadados do usuário (Supabase Auth),
+        // editados em Configurações > Perfil
+        perfil: {
+          nome: String(user?.user_metadata?.nome ?? ""),
+          sobrenome: String(user?.user_metadata?.sobrenome ?? ""),
+          cor: String(user?.user_metadata?.cor ?? "roxo"),
+        },
       }}
     >
       {children}
