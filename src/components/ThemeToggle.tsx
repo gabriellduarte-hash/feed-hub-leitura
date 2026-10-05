@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon } from "./Icon";
 
-export function ThemeToggle({ className = "" }: { className?: string }) {
+export function ThemeToggle({ className = "", mostrarRotulo = false }: { className?: string; mostrarRotulo?: boolean }) {
   const [tema, setTema] = useLocalStorage("tema", "dark");
   const escuro = tema !== "light";
 
@@ -18,12 +18,13 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       type="button"
       onClick={() => setTema(escuro ? "light" : "dark")}
       aria-label={rotulo}
-      data-dica={rotulo}
+      data-dica={mostrarRotulo ? undefined : rotulo}
       className={className}
     >
-      <span key={tema} className="inline-flex animate-[girar-entrada_350ms_ease-out]">
-        <Icon nome={escuro ? "lua" : "sol"} tamanho={24} />
+      <span key={tema} className="inline-flex flex-shrink-0 animate-[girar-entrada_350ms_ease-out]">
+        <Icon nome={escuro ? "lua" : "sol"} tamanho={22} />
       </span>
+      {mostrarRotulo && <span className="truncate">{rotulo}</span>}
     </button>
   );
 }

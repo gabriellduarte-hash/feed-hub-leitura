@@ -55,6 +55,20 @@ export async function deixarDeSeguir(id: string, estavaNaPagina: boolean): Promi
   return resultado;
 }
 
+export async function criarColecao(nome: string): Promise<Resultado> {
+  const limpo = nome.trim();
+  if (!limpo) return;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { erro: "Sessão expirada. Entre de novo." };
+  return conferir(
+    await supabase.from("topics").insert({ user_id: user.id, name: limpo }).select("id"),
+    "Não foi possível criar a coleção.",
+  );
+}
+
 export async function renomearColecao(id: string, nome: string): Promise<Resultado> {
   const limpo = nome.trim();
   if (!limpo) return;

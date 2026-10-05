@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { ArtigoLista } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
@@ -116,18 +117,30 @@ export function ArticlePanel({
           />
 
           <div className="flex items-center gap-1">
-            <BotaoBarra
-              icone="marcador"
-              rotulo={e.salvo ? "Remover de Ler mais tarde (s)" : "Ler mais tarde (s)"}
-              ativo={e.salvo}
-              onClick={() => onAlterar({ salvo: !e.salvo })}
-            />
-            <BotaoBarra
-              icone="check"
-              rotulo={e.lido ? "Marcar como não lido (m)" : "Marcar como lido (m)"}
-              ativo={e.lido}
-              onClick={() => onAlterar({ lido: !e.lido })}
-            />
+            {a.origem === "catalogo" ? (
+              <Link
+                href={`/explorar?q=${encodeURIComponent(a.fonteNome)}`}
+                className="flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-text-secondary transition hover:bg-surface-hover hover:text-foreground"
+              >
+                <Icon nome="adicionar" tamanho={16} />
+                Seguir {a.fonteNome}
+              </Link>
+            ) : (
+              <>
+                <BotaoBarra
+                  icone="marcador"
+                  rotulo={e.salvo ? "Remover de Ler mais tarde (s)" : "Ler mais tarde (s)"}
+                  ativo={e.salvo}
+                  onClick={() => onAlterar({ salvo: !e.salvo })}
+                />
+                <BotaoBarra
+                  icone="check"
+                  rotulo={e.lido ? "Marcar como não lido (m)" : "Marcar como lido (m)"}
+                  ativo={e.lido}
+                  onClick={() => onAlterar({ lido: !e.lido })}
+                />
+              </>
+            )}
             <a
               href={a.url}
               target="_blank"

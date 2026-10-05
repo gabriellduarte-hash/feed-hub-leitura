@@ -19,6 +19,10 @@ export type ArtigoLista = {
   rotuloDia: string;
   lido: boolean;
   salvo: boolean;
+  /** "catalogo" = notícia de uma fonte do catálogo (aba Explorar), que o
+   * usuário pode não seguir: não tem lido/salvo, porque essas tabelas
+   * apontam pra articles, não pra catalog_articles. */
+  origem: "usuario" | "catalogo";
 };
 
 type LinhaArtigo = {
@@ -96,7 +100,13 @@ export type FiltroArtigos = {
 };
 
 /** O que a rolagem infinita manda de volta pro servidor pra pedir a próxima página. */
-export type FiltroPagina = { fonteId?: string; topicoId?: string };
+export type FiltroPagina = {
+  fonteId?: string;
+  topicoId?: string;
+  /** Lista notícias do catálogo (aba Explorar) em vez dos artigos do usuário */
+  catalogo?: boolean;
+  categoria?: string;
+};
 
 export const TAMANHO_PAGINA = 30;
 
@@ -164,6 +174,7 @@ async function enriquecer(supabase: SupabaseClient, linhas: LinhaArtigo[]) {
       rotuloDia: rotuloDoDia(data, agora),
       lido: setLidos.has(l.id),
       salvo: setSalvos.has(l.id),
+      origem: "usuario" as const,
     };
   });
 }
@@ -180,8 +191,74 @@ export type Secao = { titulo: string; artigos: ArtigoLista[] };
 
 /** Uma página do feed: pede um item a mais só pra saber se ainda tem próxima. */
 export async function buscarPagina(supabase: SupabaseClient, filtro: FiltroPagina, offset = 0) {
-  const artigos = await buscarArtigos(supabase, { ...filtro, offset, limite: TAMANHO_PAGINA + 1 });
+  const artigos = filtro.catalogo
+    ? await buscarNoticiasDoCatalogo(supabase, filtro.categoria, offset, TAMANHO_PAGINA + 1)
+    : await buscarArtigos(supabase, { fonteId: filtro.fonteId, topicoId: filtro.topicoId, offset, limite: TAMANHO_PAGINA + 1 });
   return { artigos: artigos.slice(0, TAMANHO_PAGINA), temMais: artigos.length > TAMANHO_PAGINA };
+}
+
+type LinhaCatalogo = {
+  id: string;
+  title: string;
+  url: string;
+  author: string | null;
+  content: string | null;
+  image_url: string | null;
+  published_at: string | null;
+  collected_at: string;
+  feed_catalog: { id: string; name: string; url: string; category: string };
+};
+
+/** Notícias das fontes do catálogo (tabela catalog_articles, sql/020),
+ * no mesmo formato da lista de artigos do usuário. */
+async function buscarNoticiasDoCatalogo(
+  supabase: SupabaseClient,
+  categoria: string | undefined,
+  offset: number,
+  limite: number,
+): Promise<ArtigoLista[]> {
+  let consulta = supabase
+    .from("catalog_articles")
+    .select(
+      "id, title, url, author, content, image_url, published_at, collected_at, feed_catalog!inner(id, name, url, category)",
+    )
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("id")
+    .range(offset, offset + limite - 1);
+  if (categoria) consulta = consulta.eq("feed_catalog.category", categoria);
+
+  const { data } = await consulta;
+  const agora = new Date();
+  return ((data ?? []) as unknown as LinhaCatalogo[]).map((l) => {
+    const data = dataDoArtigo(l);
+    return {
+      id: l.id,
+      title: l.title,
+      url: l.url,
+      author: l.author,
+      content: l.content,
+      ai_summary: null,
+      category: l.feed_catalog.category,
+      image_url: l.image_url,
+      fonteId: l.feed_catalog.id,
+      fonteNome: l.feed_catalog.name,
+      fonteHost: hostDe(l.feed_catalog.url),
+      tempo: tempoRelativo(data, agora),
+      dataCompleta: dataCompleta(data),
+      dia: diaLocal(data),
+      rotuloDia: rotuloDoDia(data, agora),
+      lido: false,
+      salvo: false,
+      origem: "catalogo" as const,
+    };
+  });
+}
+
+/** Categorias que têm fonte no catálogo (os filtros da aba Explorar). */
+export async function categoriasDoCatalogo(supabase: SupabaseClient) {
+  const { data } = await supabase.from("feed_catalog").select("category");
+  const presentes = new Set((data ?? []).map((c) => c.category as string));
+  return CATEGORIAS.filter((c) => presentes.has(c));
 }
 
 /** Agrupa por data de publicação, mantendo a ordem em que os dias aparecem. */

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
-import { PainelFeeds, Rail, type DadosSidebar } from "./Sidebar";
+import { Sidebar, type DadosSidebar } from "./Sidebar";
 import { Toaster } from "./Toast";
 
 export function AppShell({ dados, children }: { dados: DadosSidebar; children: React.ReactNode }) {
@@ -30,19 +30,12 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
 
   return (
     <div className="flex h-screen bg-background">
-      <Rail
-        email={dados.email}
-        painelAberto={!recolhido}
-        onAlternarPainel={alternar}
+      <Sidebar
+        dados={dados}
+        recolhido={recolhido}
+        onAlternar={alternar}
         onIrPara={() => setIrParaAberto(true)}
       />
-      <div
-        className={`flex-shrink-0 overflow-hidden transition-[width] duration-[250ms] ease-out ${
-          recolhido ? "w-0" : "w-[264px]"
-        }`}
-      >
-        <PainelFeeds dados={dados} onRecolher={alternar} />
-      </div>
 
       <main className="relative min-w-0 flex-grow overflow-y-auto">{children}</main>
 

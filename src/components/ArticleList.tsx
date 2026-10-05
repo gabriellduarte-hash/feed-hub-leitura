@@ -104,7 +104,7 @@ export function ArticleList({
       setAbertoId(a.id);
       setExibidoId(a.id);
       linhas.current.get(a.id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      if (!estadoDe(a).lido) alterar(a, { lido: true });
+      if (a.origem === "usuario" && !estadoDe(a).lido) alterar(a, { lido: true });
     },
     [alterar, estadoDe],
   );
@@ -132,8 +132,8 @@ export function ArticleList({
       if (e.key === "j") irPara(1);
       else if (e.key === "k") irPara(-1);
       else if (e.key === "Escape") setAbertoId(null);
-      else if (aberto && e.key === "m") alterar(aberto, { lido: !estadoDe(aberto).lido });
-      else if (aberto && e.key === "s") alterar(aberto, { salvo: !estadoDe(aberto).salvo });
+      else if (aberto?.origem === "usuario" && e.key === "m") alterar(aberto, { lido: !estadoDe(aberto).lido });
+      else if (aberto?.origem === "usuario" && e.key === "s") alterar(aberto, { salvo: !estadoDe(aberto).salvo });
       else if (aberto && e.key === "v") window.open(aberto.url, "_blank", "noopener");
     }
     window.addEventListener("keydown", aoTeclar);
@@ -293,20 +293,22 @@ function LinhaArtigo({
         )}
       </div>
 
-      <div className="absolute top-4 right-3 flex translate-x-1 items-center gap-0.5 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100 focus-within:opacity-100">
-        <BotaoAcao
-          rotulo={estado.salvo ? "Remover de Ler mais tarde" : "Ler mais tarde"}
-          ativo={estado.salvo}
-          onClick={() => onAlterar({ salvo: !estado.salvo })}
-          icone="marcador"
-        />
-        <BotaoAcao
-          rotulo={estado.lido ? "Marcar como não lido" : "Marcar como lido"}
-          ativo={estado.lido}
-          onClick={() => onAlterar({ lido: !estado.lido })}
-          icone="check"
-        />
-      </div>
+      {artigo.origem === "usuario" && (
+        <div className="absolute top-4 right-3 flex translate-x-1 items-center gap-0.5 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100 focus-within:opacity-100">
+          <BotaoAcao
+            rotulo={estado.salvo ? "Remover de Ler mais tarde" : "Ler mais tarde"}
+            ativo={estado.salvo}
+            onClick={() => onAlterar({ salvo: !estado.salvo })}
+            icone="marcador"
+          />
+          <BotaoAcao
+            rotulo={estado.lido ? "Marcar como não lido" : "Marcar como lido"}
+            ativo={estado.lido}
+            onClick={() => onAlterar({ lido: !estado.lido })}
+            icone="check"
+          />
+        </div>
+      )}
     </article>
   );
 }
