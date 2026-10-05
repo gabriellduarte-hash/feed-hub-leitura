@@ -39,7 +39,7 @@ export async function seguirFeedDoCatalogo(formData: FormData): Promise<{ erro?:
   // o cliente só diz qual item quer seguir.
   const { data: item } = await supabase
     .from("feed_catalog")
-    .select("name, url, category")
+    .select("name, url, category, kind")
     .eq("id", catalogoId)
     .maybeSingle();
   if (!item) return { erro: "Fonte não encontrada no catálogo." };
@@ -49,7 +49,9 @@ export async function seguirFeedDoCatalogo(formData: FormData): Promise<{ erro?:
 
   const { error } = await supabase
     .from("sources")
-    .insert({ topic_id: colecao, url: item.url, name: item.name, type: "rss" });
+    // sitemap (sql/021) vira uma fonte do tipo sitemap; o resto, inclusive o
+    // RSS do Google Notícias, é RSS comum pro coletor
+    .insert({ topic_id: colecao, url: item.url, name: item.name, type: item.kind === "sitemap" ? "sitemap" : "rss" });
   // 23505: já segue esse feed nessa coleção — clicar de novo não quebra nada
   if (error && error.code !== "23505") return { erro: "Não foi possível seguir essa fonte." };
 
@@ -64,7 +66,8 @@ export async function seguirPorUrl(
 ): Promise<EstadoSeguirUrl> {
   const url = ((formData.get("url") as string) ?? "").trim();
   const nome = ((formData.get("name") as string) ?? "").trim();
-  const tipo = formData.get("type") === "scrape" ? "scrape" : "rss";
+  const tipoEscolhido = formData.get("type");
+  const tipo = tipoEscolhido === "scrape" || tipoEscolhido === "sitemap" ? tipoEscolhido : "rss";
   const topicId = (formData.get("topic_id") as string) ?? "";
   const nomeNova = (formData.get("nova_colecao") as string) ?? "";
 

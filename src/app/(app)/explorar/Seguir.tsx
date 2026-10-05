@@ -115,6 +115,7 @@ export function SeguirPorUrlForm({
           <span className="text-[13px] text-text-secondary">Tipo</span>
           <select name="type" className={campo}>
             <option value="rss">Feed RSS</option>
+            <option value="sitemap">Sitemap de notícias (site sem RSS)</option>
             <option value="scrape">Página (extrair texto)</option>
           </select>
         </label>

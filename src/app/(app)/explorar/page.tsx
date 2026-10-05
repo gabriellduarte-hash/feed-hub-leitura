@@ -1,7 +1,7 @@
 import Form from "next/form";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { faviconDe, hostDe } from "@/lib/fonte";
+import { faviconDe, hostDe, origemDe } from "@/lib/fonte";
 import { Conteudo } from "@/components/FeedLayout";
 import { Icon, type NomeIcone } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
@@ -13,6 +13,7 @@ type ItemCatalogo = {
   name: string;
   url: string;
   description: string | null;
+  kind: string;
 };
 
 function texto(valor: string | string[] | undefined) {
@@ -32,7 +33,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
 
   const supabase = await createClient();
   const [{ data: catalogoData }, { data: fontesSeguidas }, { data: topicos }] = await Promise.all([
-    supabase.from("feed_catalog").select("id, category, name, url, description").order("name"),
+    supabase.from("feed_catalog").select("id, category, name, url, description, kind").order("name"),
     supabase.from("sources").select("url"),
     supabase.from("topics").select("id, name").order("created_at"),
   ]);
@@ -170,6 +171,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
                       <div className="text-[15px] font-semibold text-foreground">{item.name}</div>
                       <div className="truncate text-[13px] text-text-muted">
                         {hostDe(item.url)} · #{item.category.toLowerCase()}
+                        {origemDe(item.url, item.kind) && ` · via ${origemDe(item.url, item.kind)}`}
                       </div>
                       {item.description && (
                         <div className="truncate text-[13px] text-text-secondary">{item.description}</div>
