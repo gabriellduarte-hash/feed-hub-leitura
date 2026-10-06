@@ -19,6 +19,8 @@ export type ResultadoAdicionar = {
   importadas?: number;
   /** Notícias coletadas agora, na hora de adicionar */
   coletadas?: number;
+  /** Resultado do disparo do workflow "Fonte nova" no GitHub */
+  coletaCompleta?: { ok: boolean; motivo: string };
 };
 
 /** Usa a coleção escolhida; sem nenhuma, cria (ou reaproveita) uma com o nome sugerido. */
@@ -131,7 +133,7 @@ export async function adicionarFonte(pedido: {
   }
 
   // Coleta completa + resumo da IA no GitHub Actions (se configurado)
-  await dispararColetaDaFonte(criada.id);
+  const coletaCompleta = await dispararColetaDaFonte(criada.id);
 
   revalidatePath("/", "layout");
   return {
@@ -140,5 +142,6 @@ export async function adicionarFonte(pedido: {
     como: DESCRICAO_VIA[fonte.via],
     importadas: typeof importadas === "number" ? importadas : 0,
     coletadas,
+    coletaCompleta,
   };
 }

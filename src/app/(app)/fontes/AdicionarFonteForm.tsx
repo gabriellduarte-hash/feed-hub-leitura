@@ -43,7 +43,10 @@ export function AdicionarFonteForm({ topicId }: { topicId: string }) {
       {resultado?.erro && <p className="text-xs text-red-500">{resultado.erro}</p>}
       {resultado?.fonteId && !resultado.erro && (
         <p className="animate-fade-up text-xs text-text-secondary">
-          ✓ {resultado.nome}: {resultado.como} · {resumoDaAdicao(resultado)}{" "}
+          ✓ {resultado.nome}: {resultado.como} · {resumoDaAdicao(resultado)}
+          {resultado.coletaCompleta && !resultado.coletaCompleta.ok && (
+            <span className="text-amber-500"> · disparo da coleta falhou: {resultado.coletaCompleta.motivo}</span>
+          )}{" "}
           <Link href={`/feeds/fonte/${resultado.fonteId}`} className="text-accent hover:underline">
             ver notícias →
           </Link>

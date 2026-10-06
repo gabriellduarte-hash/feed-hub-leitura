@@ -40,7 +40,10 @@ export function BotaoSeguir({
         setSeguindo(false);
         mostrarToast(r.erro);
       } else {
-        mostrarToast(`Seguindo ${nome} em ${colecao?.nome ?? categoria} · ${resumoDaAdicao(r)}`);
+        mostrarToast(
+          `Seguindo ${nome} em ${colecao?.nome ?? categoria} · ${resumoDaAdicao(r)}` +
+            (r.coletaCompleta && !r.coletaCompleta.ok ? ` · disparo da coleta falhou: ${r.coletaCompleta.motivo}` : ""),
+        );
       }
     });
   }
@@ -176,6 +179,12 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
           <span className="font-semibold text-foreground">✓ {resultado.nome} adicionada</span>
           <span className="text-text-secondary">Detectado: {resultado.como}</span>
           <span className="text-text-secondary">{resumoDaAdicao(resultado)}</span>
+          {resultado.coletaCompleta && (
+            <span className={resultado.coletaCompleta.ok ? "text-text-secondary" : "text-amber-500"}>
+              {resultado.coletaCompleta.ok ? "✓ " : "Texto completo e resumo da IA: "}
+              {resultado.coletaCompleta.motivo}
+            </span>
+          )}
           <Link href={`/feeds/fonte/${resultado.fonteId}`} className="mt-1 w-fit text-accent hover:underline">
             Ver notícias →
           </Link>
