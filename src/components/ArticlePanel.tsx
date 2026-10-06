@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { ArtigoLista } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
+import { ResumoFormatado } from "@/lib/resumo";
 import { Icon, type NomeIcone } from "./Icon";
 import { ItemMenu, Menu } from "./Menu";
 import { mostrarToast } from "./Toast";
@@ -47,6 +48,8 @@ function minutosDeLeitura(a: ArtigoLista) {
   return Math.max(1, Math.round(palavras / 200));
 }
 
+/** Leitor de artigo: abre no centro do espaço à direita do menu lateral
+ * (que continua visível), com zoom suave. Usa --largura-menu do AppShell. */
 export function ArticlePanel({
   artigo: a,
   estado: e,
@@ -81,11 +84,14 @@ export function ArticlePanel({
   const temTexto = blocos.length > 0 && a.content !== a.ai_summary;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-y-0 right-0 left-0 z-50 flex items-center justify-center p-3 md:left-[var(--largura-menu)] md:p-8">
       <div
         onClick={onFechar}
-        className={`absolute inset-0 bg-overlay backdrop-blur-[2px] ${saindo ? "animate-some" : "animate-aparece"}`}
+        className={`absolute inset-0 bg-overlay ${saindo ? "animate-some" : "animate-aparece"}`}
       />
+
+      {temAnterior && <SetaNavegacao lado="esquerda" onClick={() => onNavegar(-1)} />}
+      {temProximo && <SetaNavegacao lado="direita" onClick={() => onNavegar(1)} />}
 
       <div
         role="dialog"
@@ -94,36 +100,26 @@ export function ArticlePanel({
         onAnimationEnd={(ev) => {
           if (saindo && ev.target === ev.currentTarget) onSaiu();
         }}
-        className={`absolute inset-y-0 right-0 flex w-full flex-col overflow-hidden border-l border-border bg-surface shadow-2xl md:inset-y-3 md:right-3 md:w-[min(1040px,calc(100vw-110px))] md:rounded-2xl md:border ${
+        className={`relative flex h-full max-h-[920px] w-full max-w-[820px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)] ${
           saindo ? "animate-painel-sai" : "animate-painel-entra"
         }`}
       >
-        <header className="relative flex h-16 flex-shrink-0 items-center justify-between border-b border-border px-4">
-          <button
-            type="button"
-            onClick={onFechar}
-            title="Fechar (Esc)"
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-hover text-foreground transition hover:bg-surface-active active:scale-90"
-          >
-            <Icon nome="fechar" />
-          </button>
+        <header className="relative flex h-14 flex-shrink-0 items-center justify-between gap-3 border-b border-border px-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <BotaoBarra icone="fechar" rotulo="Fechar (Esc)" onClick={onFechar} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={faviconDe(a.fonteHost)} alt="" className="h-5 w-5 flex-shrink-0 rounded-sm" />
+            <span className="truncate text-[13px] font-semibold text-foreground">{a.fonteNome}</span>
+          </div>
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={faviconDe(a.fonteHost)}
-            alt={a.fonteNome}
-            title={a.fonteNome}
-            className="absolute left-1/2 h-9 w-9 -translate-x-1/2 rounded-xl bg-surface-hover p-1.5 ring-1 ring-border"
-          />
-
-          <div className="flex items-center gap-1">
+          <div className="flex flex-shrink-0 items-center gap-1">
             {a.origem === "catalogo" ? (
               <Link
                 href={`/explorar?q=${encodeURIComponent(a.fonteNome)}`}
-                className="flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-text-secondary transition hover:bg-surface-hover hover:text-foreground"
+                className="flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:text-accent"
               >
-                <Icon nome="adicionar" tamanho={16} />
-                Seguir {a.fonteNome}
+                <Icon nome="adicionar" tamanho={15} />
+                Seguir
               </Link>
             ) : (
               <>
@@ -145,16 +141,20 @@ export function ArticlePanel({
               href={a.url}
               target="_blank"
               rel="noreferrer"
-              className="ml-2 flex h-10 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:brightness-110 active:scale-[0.97]"
+              className="group ml-1 flex h-8 items-center gap-1.5 rounded-md bg-foreground px-3 text-[12px] font-semibold text-background transition-colors duration-150 hover:bg-accent active:scale-[0.97]"
             >
               Abrir original
-              <Icon nome="externo" tamanho={15} />
+              <Icon
+                nome="externo"
+                tamanho={13}
+                className="transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              />
             </a>
             <Menu
               alinhar="direita"
               rotulo="Mais opções"
-              gatilho={<Icon nome="mais" />}
-              classeGatilho="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-hover text-foreground transition hover:bg-surface-active"
+              gatilho={<Icon nome="mais" tamanho={18} />}
+              classeGatilho="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-hover hover:text-foreground"
             >
               {(fechar) => (
                 <>
@@ -193,7 +193,7 @@ export function ArticlePanel({
           </div>
 
           <div
-            className="absolute inset-x-0 -bottom-px h-0.5 origin-left bg-accent transition-transform duration-100"
+            className="absolute inset-x-0 -bottom-px h-[2px] origin-left bg-accent transition-transform duration-100"
             style={{ transform: `scaleX(${progresso})` }}
           />
         </header>
@@ -205,70 +205,58 @@ export function ArticlePanel({
             const total = el.scrollHeight - el.clientHeight;
             setRolagem({ id: a.id, valor: total > 0 ? el.scrollTop / total : 1 });
           }}
-          className="relative flex-grow overflow-y-auto"
+          className="flex-grow overflow-y-auto"
         >
-          <article className="animate-fade-up mx-auto max-w-[680px] px-8 pt-14 pb-20">
-            <div className="mb-3 text-[12px] font-semibold tracking-[0.14em] text-text-muted uppercase">
-              {a.fonteNome}
+          <article className="animate-fade-up mx-auto max-w-[640px] px-7 pt-12 pb-20 md:px-10">
+            <div className="flex flex-wrap items-center gap-x-2 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
+              {a.category && <span className="text-accent">{a.category}</span>}
+              {a.category && <span aria-hidden>/</span>}
+              <span>{minutosDeLeitura(a)} min de leitura</span>
             </div>
-            <h1 className="text-[32px] leading-[1.18] font-bold tracking-tight text-foreground text-balance">
+
+            <h1 className="mt-4 text-[30px] leading-[1.15] font-extrabold tracking-tight text-balance text-foreground">
               {a.title}
             </h1>
-            <p className="mt-3 text-[15px] text-text-secondary">
-              {a.category && <span className="text-accent">#{a.category.toLowerCase()}</span>}
-              {a.category && " · "}
-              {minutosDeLeitura(a)} min de leitura
-            </p>
 
-            <div className="mt-7 flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={faviconDe(a.fonteHost)}
-                alt=""
-                className="h-10 w-10 rounded-full bg-accent-soft p-2 ring-2 ring-accent/40"
-              />
-              <div className="flex flex-col text-[12px] tracking-wider uppercase">
-                <span className="font-semibold text-foreground">{a.author ?? a.fonteNome}</span>
-                <span className="text-text-muted">{a.dataCompleta}</span>
-              </div>
+            <div className="mt-5 flex flex-wrap items-baseline gap-x-2 text-[13px]">
+              <span className="font-semibold text-foreground">{a.author ?? a.fonteNome}</span>
+              <span className="font-light text-text-muted">{a.dataCompleta}</span>
             </div>
 
-            <hr className="my-9 border-border" />
-
             {a.ai_summary && (
-              <section className="mb-10">
-                <h2 className="mb-4 flex items-center gap-2 text-[22px] font-bold tracking-tight text-foreground">
-                  <Icon nome="ia" tamanho={20} className="text-accent" />
+              <section className="mt-10">
+                <h2 className="mb-5 flex items-center gap-2 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
+                  <Icon nome="ia" tamanho={14} className="text-accent" />
                   Resumo
                 </h2>
-                <p className="rounded-r-xl border-l-[3px] border-accent bg-accent-soft/60 py-4 pr-5 pl-5 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.85] text-foreground">
-                  {a.ai_summary}
-                </p>
+                <ResumoFormatado texto={a.ai_summary} />
               </section>
             )}
 
             {a.image_url && (
-              <figure className="mb-10">
+              <figure className="mt-10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={a.image_url} alt="" className="w-full rounded-xl ring-1 ring-border" />
-                <figcaption className="mt-2 text-center text-[12px] text-text-muted">Imagem: {a.fonteNome}</figcaption>
+                <img src={a.image_url} alt="" className="w-full rounded-md border border-border" />
+                <figcaption className="mt-2 text-[11px] font-light text-text-muted">Imagem: {a.fonteNome}</figcaption>
               </figure>
             )}
 
             {temTexto && (
-              <section>
-                <h2 className="mb-5 text-[22px] font-bold tracking-tight text-foreground">A notícia</h2>
-                <div className="flex flex-col gap-6 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.9] text-foreground/90">
+              <section className="mt-12 border-t border-border pt-10">
+                <h2 className="mb-6 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
+                  {a.ai_summary ? "Texto da matéria" : "A notícia"}
+                </h2>
+                <div className="flex flex-col gap-6 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.9] text-text-secondary">
                   {blocos.map((b, i) =>
                     b.tipo === "h" ? (
-                      <h3 key={i} className="mt-4 text-[19px] leading-snug font-bold text-foreground">
+                      <h3 key={i} className="mt-3 text-[1.1em] leading-snug font-bold text-foreground">
                         {b.texto}
                       </h3>
                     ) : b.tipo === "lista" ? (
-                      <ul key={i} className="flex flex-col gap-2 pl-1">
+                      <ul key={i} className="flex flex-col gap-2">
                         {b.itens.map((item, j) => (
                           <li key={j} className="flex gap-3">
-                            <span className="text-accent">→</span>
+                            <span className="text-accent">—</span>
                             <span>{item}</span>
                           </li>
                         ))}
@@ -281,33 +269,33 @@ export function ArticlePanel({
               </section>
             )}
 
-            <div className="mt-14 flex flex-col items-start gap-4 rounded-2xl border border-border bg-background/50 p-6">
-              <div className="text-[13px] text-text-secondary">
-                O texto acima é o que o coletor conseguiu extrair. A matéria completa, com links e mídia, está no site.
-              </div>
+            {!a.ai_summary && !temTexto && (
+              <p className="mt-10 text-[14px] text-text-secondary">
+                Esta fonte não mandou texto junto com a notícia. Leia a matéria completa no site.
+              </p>
+            )}
+
+            <div className="mt-14 flex flex-col items-start gap-3 border-t border-border pt-8">
               <a
                 href={a.url}
                 target="_blank"
                 rel="noreferrer"
-                className="group flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground transition hover:brightness-110 active:scale-[0.98]"
+                className="group flex items-center gap-2 text-[14px] font-bold text-foreground transition-colors hover:text-accent"
               >
                 Continuar em {a.fonteHost}
                 <Icon
                   nome="externo"
-                  tamanho={15}
+                  tamanho={14}
                   className="transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                 />
               </a>
+              <p className="text-[11px] font-light text-text-muted">
+                <b className="font-semibold">j</b>/<b className="font-semibold">k</b> próximo/anterior ·{" "}
+                <b className="font-semibold">m</b> lido · <b className="font-semibold">s</b> ler mais tarde ·{" "}
+                <b className="font-semibold">v</b> abrir original · <b className="font-semibold">Esc</b> fechar
+              </p>
             </div>
-
-            <p className="mt-10 text-center text-[11px] text-text-muted">
-              <b>j</b>/<b>k</b> próximo/anterior · <b>m</b> lido · <b>s</b> ler mais tarde · <b>v</b> abrir original ·{" "}
-              <b>Esc</b> fechar
-            </p>
           </article>
-
-          {temAnterior && <SetaNavegacao lado="esquerda" onClick={() => onNavegar(-1)} />}
-          {temProximo && <SetaNavegacao lado="direita" onClick={() => onNavegar(1)} />}
         </div>
       </div>
     </div>
@@ -331,11 +319,11 @@ function BotaoBarra({
       title={rotulo}
       aria-label={rotulo}
       onClick={onClick}
-      className={`flex h-10 w-10 items-center justify-center rounded-xl transition hover:bg-surface-hover active:scale-90 ${
+      className={`flex h-8 w-8 items-center justify-center rounded-md transition duration-150 hover:bg-surface-hover active:scale-90 ${
         ativo ? "text-accent" : "text-text-secondary hover:text-foreground"
       }`}
     >
-      <Icon nome={icone} preenchido={ativo && icone === "marcador"} />
+      <Icon nome={icone} tamanho={17} preenchido={ativo && icone === "marcador"} />
     </button>
   );
 }
@@ -346,11 +334,11 @@ function SetaNavegacao({ lado, onClick }: { lado: "esquerda" | "direita"; onClic
       type="button"
       onClick={onClick}
       title={lado === "direita" ? "Próximo (j)" : "Anterior (k)"}
-      className={`fixed top-1/2 flex h-12 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-text-muted transition hover:bg-surface-hover hover:text-foreground ${
-        lado === "direita" ? "right-3" : "left-3"
+      className={`absolute top-1/2 z-10 hidden h-11 w-9 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface text-text-secondary transition-colors hover:border-accent hover:text-accent lg:flex ${
+        lado === "direita" ? "right-2" : "left-2"
       }`}
     >
-      <Icon nome={lado === "direita" ? "chevronDireita" : "chevronEsquerda"} tamanho={22} />
+      <Icon nome={lado === "direita" ? "chevronDireita" : "chevronEsquerda"} tamanho={18} />
     </button>
   );
 }

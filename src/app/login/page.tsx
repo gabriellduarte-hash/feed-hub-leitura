@@ -44,7 +44,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="flex w-[380px] flex-col gap-7">
         <div className="flex flex-col items-center gap-2.5 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
+          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent">
             <svg
               width="20"
               height="20"
@@ -68,7 +68,7 @@ export default function LoginPage() {
 
         <form
           onSubmit={enviar}
-          className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-8"
+          className="flex flex-col gap-4 rounded-md border border-border bg-surface p-8"
         >
           <div className="flex flex-col gap-1.5">
             <label htmlFor="email" className="text-[13px] font-semibold text-foreground">
@@ -108,7 +108,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={carregando}
-            className="mt-1 h-[42px] rounded-lg bg-accent text-sm font-bold text-white disabled:opacity-60"
+            className="mt-1 h-[42px] rounded-lg bg-foreground text-sm font-bold text-background transition-colors hover:bg-accent disabled:opacity-60"
           >
             {carregando ? "Aguarde..." : modoCadastro ? "Criar conta" : "Entrar"}
           </button>

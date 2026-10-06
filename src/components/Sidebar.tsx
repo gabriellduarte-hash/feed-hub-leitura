@@ -41,11 +41,11 @@ export type DadosSidebar = {
 
 /* Item do menu: ícone grande + nome (aberto) ou só o ícone com dica (recolhido). */
 const classeItem =
-  "group relative flex h-10 flex-shrink-0 items-center gap-3 rounded-xl px-[13px] text-[14px] transition-colors duration-150";
+  "group relative flex h-9 flex-shrink-0 items-center gap-3 rounded-md px-[11px] text-[13px] transition-colors duration-150";
 
 function classeEstado(ativo: boolean) {
   return ativo
-    ? "bg-accent-soft font-semibold text-accent"
+    ? "bg-surface-active font-semibold text-foreground"
     : "text-text-secondary hover:bg-surface-hover hover:text-foreground";
 }
 
@@ -73,19 +73,19 @@ export function Sidebar({
 
   return (
     <nav
-      className={`relative z-40 flex h-full flex-shrink-0 flex-col border-r border-border bg-sidebar px-[14px] py-4 transition-[width] duration-[250ms] ease-out [&>*]:flex-shrink-0 ${
+      className={`relative z-40 flex h-full flex-shrink-0 flex-col border-r border-border bg-sidebar px-4 py-5 transition-[width] duration-[250ms] ease-out [&>*]:flex-shrink-0 ${
         // aberto: rola se a lista de coleções for longa; recolhido: sem
         // rolagem, pra dica (tooltip) poder sair pra fora do menu
-        recolhido ? "w-[76px] overflow-visible" : "w-[272px] overflow-x-hidden overflow-y-auto"
+        recolhido ? "w-[72px] overflow-visible" : "w-[264px] overflow-x-hidden overflow-y-auto"
       }`}
     >
-      <div className={`mb-4 flex items-center ${recolhido ? "flex-col gap-3" : "justify-between"}`}>
+      <div className={`mb-7 flex items-center ${recolhido ? "flex-col gap-3" : "justify-between"}`}>
         <Link href="/" aria-label="Início" className="flex min-w-0 items-center gap-3">
-          <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground shadow-[0_6px_20px_-6px_var(--accent)] transition-transform duration-200 hover:-rotate-3">
-            <Icon nome="rss" tamanho={24} espessura={2.2} />
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-foreground text-background transition-colors duration-200 hover:bg-accent">
+            <Icon nome="rss" tamanho={20} espessura={2.2} />
           </span>
           {!recolhido && (
-            <span className="animate-aparece truncate text-[15px] font-bold tracking-tight text-foreground">
+            <span className="animate-aparece truncate text-[14px] font-extrabold tracking-tight text-foreground">
               Feed de Notícias
             </span>
           )}
@@ -95,13 +95,13 @@ export function Sidebar({
           onClick={onAlternar}
           aria-label={recolhido ? "Expandir menu" : "Recolher menu"}
           data-dica={recolhido ? "Expandir menu" : undefined}
-          className={`${recolhido ? "dica" : ""} flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-foreground`}
+          className={`${recolhido ? "dica" : ""} flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-hover hover:text-foreground`}
         >
           <Icon nome={recolhido ? "chevronDireita" : "chevronEsquerda"} tamanho={18} />
         </button>
       </div>
 
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <ItemNav href="/" icone="casa" rotulo="Início" recolhido={recolhido} ativo={pathname === "/"} />
         {recolhido && (
           <ItemNav
@@ -134,7 +134,7 @@ export function Sidebar({
           data-dica={recolhido ? "Ir para…  Ctrl K" : undefined}
           className={`${classeItem} ${classeEstado(false)} ${recolhido ? "dica" : ""}`}
         >
-          <Icon nome="comando" tamanho={22} className="flex-shrink-0 transition-transform duration-150 group-hover:scale-110" />
+          <Icon nome="comando" tamanho={18} className="flex-shrink-0 transition-transform duration-150 group-hover:scale-110" />
           {!recolhido && (
             <>
               <span className="truncate">Ir para…</span>
@@ -148,17 +148,19 @@ export function Sidebar({
         href="/explorar"
         aria-label="Seguir fontes"
         data-dica={recolhido ? "Seguir fontes" : undefined}
-        className={`${recolhido ? "dica" : ""} mt-3 flex h-12 items-center gap-3 rounded-xl bg-accent px-[13px] text-[14px] font-semibold text-accent-foreground transition duration-200 hover:brightness-110 active:scale-[0.98] ${
-          pathname.startsWith("/explorar") ? "ring-2 ring-accent/40 ring-offset-2 ring-offset-sidebar" : ""
+        className={`${recolhido ? "dica" : ""} group mt-6 flex h-9 items-center gap-3 rounded-md border px-[10px] text-[13px] font-semibold transition-colors duration-150 active:scale-[0.98] ${
+          pathname.startsWith("/explorar")
+            ? "border-accent bg-accent-soft text-accent"
+            : "border-border bg-surface text-foreground hover:border-accent hover:text-accent"
         }`}
       >
-        <Icon nome="adicionar" tamanho={22} espessura={2.2} className="flex-shrink-0" />
+        <Icon nome="adicionar" tamanho={18} espessura={2} className="flex-shrink-0 text-accent transition-transform duration-200 group-hover:rotate-90" />
         {!recolhido && <span className="truncate">Seguir fontes</span>}
       </Link>
 
       {!recolhido && <SubmenuColecoes dados={dados} pathname={pathname} />}
 
-      <div className="mt-auto flex flex-col gap-0.5 pt-6">
+      <div className="mt-auto flex flex-col gap-1 pt-8">
         <button
           type="button"
           onClick={() => abrirConfiguracoes("resumo")}
@@ -166,20 +168,20 @@ export function Sidebar({
           data-dica={recolhido ? "Resumo diário" : undefined}
           className={`${classeItem} ${classeEstado(false)} ${recolhido ? "dica" : ""}`}
         >
-          <Icon nome="enviar" tamanho={22} className="flex-shrink-0 transition-transform duration-150 group-hover:scale-110" />
+          <Icon nome="enviar" tamanho={18} className="flex-shrink-0 transition-transform duration-150 group-hover:scale-110" />
           {!recolhido && <span className="truncate">Resumo diário</span>}
         </button>
         <div className="mt-2">
           <Menu
             largura="w-64"
             rotulo="Sua conta"
-            classeGatilho={`flex w-full items-center gap-3 rounded-xl p-1 text-left transition-colors hover:bg-surface-hover ${
+            classeGatilho={`flex w-full items-center gap-3 rounded-md p-1 text-left transition-colors hover:bg-surface-hover ${
               recolhido ? "justify-center" : ""
             }`}
             gatilho={
               <>
                 <span
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white"
                   style={estiloAvatar(dados.perfil.cor)}
                 >
                   {(nome.charAt(0) || "?").toUpperCase()}
@@ -265,11 +267,11 @@ function ItemNav({
       className={`${classeItem} ${classeEstado(ativo)} ${recolhido ? "dica" : ""}`}
     >
       {ativo && (
-        <span className="animate-aparece absolute top-1/2 -left-[14px] h-6 w-1 -translate-y-1/2 rounded-r-full bg-accent" />
+        <span className="animate-aparece absolute top-1/2 -left-4 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent" />
       )}
       <Icon
         nome={icone}
-        tamanho={22}
+        tamanho={18}
         preenchido={ativo && icone === "marcador"}
         className="flex-shrink-0 transition-transform duration-150 group-hover:scale-110"
       />
@@ -322,13 +324,13 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
   const favoritas = dados.colecoes.flatMap((c) => c.fontes).filter((f) => f.favorita);
 
   return (
-    <div className="animate-aparece mt-6 flex flex-col text-[13px]">
-      <div className="group mb-1 flex h-8 items-center rounded-lg">
+    <div className="animate-aparece mt-9 flex flex-col text-[13px]">
+      <div className="group mb-2 flex h-8 items-center rounded-md">
         <button
           type="button"
           onClick={() => setSubmenuAberto(aberto ? "0" : "1")}
           aria-expanded={aberto}
-          className="flex h-8 min-w-0 flex-grow items-center gap-2 px-2 text-[11px] font-semibold tracking-[0.12em] text-text-muted uppercase transition-colors hover:text-foreground"
+          className="flex h-8 min-w-0 flex-grow items-center gap-2 px-1 text-[12px] font-medium text-text-muted transition-colors hover:text-foreground"
         >
           <Icon
             nome="chevronBaixo"
@@ -386,10 +388,10 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
       <div
         className={`grid transition-[grid-template-rows] duration-200 ease-out ${aberto ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
       >
-        <div className="flex flex-col gap-0.5 overflow-hidden">
+        <div className="flex flex-col gap-1 overflow-hidden">
           <Link
             href="/feeds/todos"
-            className={`flex items-center gap-3 rounded-lg py-2 pl-2 transition-colors ${
+            className={`flex items-center gap-3 rounded-md py-[7px] pl-2 transition-colors ${
               pathname === "/feeds/todos" ? "bg-surface-active text-foreground" : "text-foreground hover:bg-surface-hover"
             }`}
           >
@@ -400,7 +402,7 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
 
           {favoritas.length > 0 && (
             <>
-              <div className="mt-2 mb-0.5 px-2 text-[10px] font-semibold tracking-[0.12em] text-text-muted uppercase">
+              <div className="mt-3 mb-1 px-2 text-[11px] font-medium text-text-muted">
                 Favoritos
               </div>
               {favoritas.map((fonte) => (
@@ -415,9 +417,9 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
             const href = `/feeds/colecao/${colecao.id}`;
             const ativa = pathname === href;
             return (
-              <div key={colecao.id} className="flex flex-col gap-0.5">
+              <div key={colecao.id} className="flex flex-col gap-1">
                 <div
-                  className={`group relative flex items-center rounded-lg transition-colors ${
+                  className={`group relative flex items-center rounded-md transition-colors ${
                     ativa ? "bg-surface-active" : "hover:bg-surface-hover"
                   }`}
                 >
@@ -459,7 +461,7 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
                     colecaoAberta ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                   }`}
                 >
-                  <div className="flex flex-col gap-0.5 overflow-hidden">
+                  <div className="flex flex-col gap-1 overflow-hidden">
                     {colecao.fontes.map((fonte) => (
                       <LinhaFonte key={fonte.id} fonte={fonte} recuo pathname={pathname} colecoes={colecoesMenu} />
                     ))}
@@ -475,7 +477,7 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
           <Menu
             rotulo="Adicionar fonte"
             largura="w-64"
-            classeGatilho="mt-1 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-accent transition-colors hover:bg-accent-soft"
+            classeGatilho="mt-1 flex w-full items-center gap-2 rounded-md px-2 py-2 text-accent transition-colors hover:bg-accent-soft"
             gatilho={
               <>
                 <Icon nome="adicionar" tamanho={16} />
@@ -509,7 +511,7 @@ function Contador({ valor, destaque = false }: { valor: number; destaque?: boole
     <span className="ml-auto flex w-10 flex-shrink-0 justify-end pr-2">
       <span
         className={`rounded-md px-1.5 py-0.5 text-[11px] tracking-normal tabular-nums normal-case ${
-          destaque ? "bg-accent-soft font-semibold text-accent" : "text-text-muted"
+          destaque ? "font-bold text-accent" : "text-text-muted"
         }`}
       >
         {valor}
@@ -533,7 +535,7 @@ function LinhaFonte({
   const ativa = pathname === href;
   return (
     <div
-      className={`group relative flex items-center rounded-lg transition-colors ${
+      className={`group relative flex items-center rounded-md transition-colors ${
         ativa ? "bg-surface-active" : "hover:bg-surface-hover"
       }`}
     >

@@ -54,7 +54,7 @@ export function FeedComSugestoes({
               <img
                 src={faviconDe(s.host)}
                 alt=""
-                className="aspect-square h-10 w-10 flex-shrink-0 rounded-xl bg-surface-active p-1.5 ring-1 ring-border transition-transform duration-150 group-hover:scale-105"
+                className="aspect-square h-10 w-10 flex-shrink-0 rounded-md bg-surface-active p-1.5 ring-1 ring-border transition-transform duration-150 group-hover:scale-105"
               />
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-foreground group-hover:text-accent">{s.nome}</div>
@@ -84,14 +84,14 @@ export function Vazio({
   acao?: { rotulo: string; href: string };
 }) {
   return (
-    <div className="animate-fade-up flex flex-col items-start gap-3 rounded-xl border border-dashed border-border px-8 py-10">
+    <div className="animate-fade-up flex flex-col items-start gap-3 rounded-md border border-dashed border-border px-8 py-10">
       <Icon nome="rss" tamanho={28} className="text-accent" />
       <div className="text-lg font-semibold text-foreground">{titulo}</div>
       <p className="max-w-[440px] text-sm text-text-secondary">{texto}</p>
       {acao && (
         <Link
           href={acao.href}
-          className="mt-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.98]"
+          className="mt-2 rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-accent active:scale-[0.98]"
         >
           {acao.rotulo}
         </Link>

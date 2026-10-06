@@ -91,8 +91,8 @@ function Chip({ href, ativo, children }: { href: string; ativo: boolean; childre
       scroll={false}
       className={`rounded-lg border px-3 py-1.5 text-[12px] transition duration-150 active:scale-95 ${
         ativo
-          ? "border-accent bg-accent text-accent-foreground"
-          : "border-border text-text-secondary hover:border-accent/50 hover:text-foreground"
+          ? "border-foreground bg-foreground font-semibold text-background"
+          : "border-border text-text-secondary hover:border-accent hover:text-accent"
       }`}
     >
       {children}

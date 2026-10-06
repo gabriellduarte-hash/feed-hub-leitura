@@ -49,7 +49,7 @@ export function BotaoSeguir({
   }
 
   const classe =
-    "flex h-8 items-center gap-1.5 rounded-md bg-accent px-3.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-95 disabled:opacity-60";
+    "flex h-8 items-center gap-1.5 rounded-md bg-foreground px-3.5 text-sm font-semibold text-background transition-colors hover:bg-accent active:scale-95 disabled:opacity-60";
 
   if (seguindo) {
     return (
@@ -155,7 +155,7 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
         <button
           type="submit"
           disabled={pendente}
-          className="h-10 rounded-lg bg-accent px-5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+          className="h-10 rounded-lg bg-foreground px-5 text-sm font-semibold text-background transition-colors hover:bg-accent active:scale-[0.98] disabled:opacity-60"
         >
           {pendente ? "Analisando o site…" : "Seguir"}
         </button>
@@ -175,7 +175,7 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
         </p>
       )}
       {resultado?.fonteId && !resultado.erro && (
-        <div className="animate-fade-up flex flex-col gap-1 rounded-xl border border-accent/40 bg-accent-soft/50 p-4 text-sm">
+        <div className="animate-fade-up flex flex-col gap-1 rounded-md border border-accent/40 bg-accent-soft/50 p-4 text-sm">
           <span className="font-semibold text-foreground">✓ {resultado.nome} adicionada</span>
           <span className="text-text-secondary">Detectado: {resultado.como}</span>
           <span className="text-text-secondary">{resumoDaAdicao(resultado)}</span>

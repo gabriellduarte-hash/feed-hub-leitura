@@ -17,8 +17,8 @@ export function PageHeader({
         {sobretitulo && (
           <div className="mb-1.5 text-[11px] font-semibold tracking-[0.14em] text-accent uppercase">{sobretitulo}</div>
         )}
-        <h1 className="truncate text-[28px] leading-tight font-bold tracking-tight text-foreground">{titulo}</h1>
-        {subtitulo && <div className="mt-2 text-[13px] text-text-secondary">{subtitulo}</div>}
+        <h1 className="truncate text-[28px] leading-tight font-extrabold tracking-tight text-foreground">{titulo}</h1>
+        {subtitulo && <div className="mt-2 text-[13px] font-light text-text-secondary">{subtitulo}</div>}
       </div>
       {acoes && <div className="flex flex-shrink-0 items-center gap-1 pt-1.5">{acoes}</div>}
     </header>

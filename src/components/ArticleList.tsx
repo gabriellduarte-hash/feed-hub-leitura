@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { agruparPorDia, type ArtigoLista, type FiltroPagina, type Secao } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
+import { textoPuro } from "@/lib/resumo";
 import { definirLido, definirSalvo } from "@/app/actions/artigos";
 import { carregarMaisArtigos } from "@/app/actions/paginacao";
 import { usePreferencias } from "@/lib/usePreferencias";
@@ -161,10 +162,10 @@ export function ArticleList({
       <div className="flex max-w-[720px] flex-col gap-8">
         {secoes.map((secao) => (
           <section key={secao.titulo} className="flex flex-col gap-1">
-            <h2 className="sticky top-0 z-10 -mx-3 mb-1 flex items-center gap-3 bg-background/85 px-3 py-2.5 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase backdrop-blur">
+            <h2 className="sticky top-0 z-10 -mx-3 mb-1 flex items-center gap-3 bg-background/90 px-3 py-3 text-[11px] font-bold tracking-[0.14em] text-foreground uppercase backdrop-blur">
               {secao.titulo}
               <span className="h-px flex-grow bg-border" />
-              <span className="font-normal tracking-normal normal-case">{secao.artigos.length}</span>
+              <span className="font-light tracking-normal text-text-muted normal-case">{secao.artigos.length}</span>
             </h2>
             {secao.artigos.map((artigo, i) => (
               <LinhaArtigo
@@ -260,17 +261,26 @@ function LinhaArtigo({
   onAbrir: () => void;
   onAlterar: (m: Partial<Estado>) => void;
 }) {
-  const resumo = artigo.ai_summary ?? artigo.content;
+  // prévia sem as marcações do resumo formatado (**negrito**, "> citação")
+  const previa = textoPuro(artigo.ai_summary ?? artigo.content);
 
   return (
     <article
       ref={registrar}
       onClick={onAbrir}
       style={{ animationDelay: `${atraso}ms` }}
-      className={`animate-fade-up group relative -mx-3 flex cursor-pointer gap-5 rounded-xl px-3 py-[var(--linha-py)] transition-colors duration-150 hover:bg-surface-hover/70 ${
-        ativo ? "bg-surface-hover/70" : ""
+      className={`animate-fade-up group relative -mx-3 flex cursor-pointer gap-5 rounded-md px-3 py-[var(--linha-py)] transition-colors duration-150 hover:bg-surface-hover/60 ${
+        ativo ? "bg-surface-hover/60" : ""
       }`}
     >
+      {/* barrinha roxa que entra no hover / no artigo aberto */}
+      <span
+        aria-hidden
+        className={`absolute top-3 bottom-3 left-0 w-[2px] origin-center rounded-full bg-accent transition-transform duration-200 ${
+          ativo ? "scale-y-100" : "scale-y-0 group-hover:scale-y-100"
+        }`}
+      />
+
       <div className="relative aspect-[16/10] w-[var(--capa-largura)] flex-shrink-0 self-start overflow-hidden bg-surface-active">
         {artigo.image_url ? (
           // <img> simples: as URLs vêm de feeds arbitrários, e liberar
@@ -280,34 +290,34 @@ function LinhaArtigo({
             src={artigo.image_url}
             alt=""
             loading="lazy"
-            className={`h-full w-full object-cover transition duration-300 group-hover:scale-[1.06] ${
-              estado.lido ? "opacity-60" : ""
+            className={`h-full w-full object-cover transition duration-300 group-hover:scale-[1.04] ${
+              estado.lido ? "opacity-50 grayscale" : ""
             }`}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-accent-soft">
+          <div className="flex h-full w-full items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={faviconDe(artigo.fonteHost)} alt="" className="h-8 w-8" />
+            <img src={faviconDe(artigo.fonteHost)} alt="" className="h-7 w-7 opacity-80 grayscale" />
           </div>
         )}
       </div>
 
       <div className="flex min-w-0 flex-grow flex-col gap-1.5 pt-0.5 pr-20">
+        <Meta artigo={artigo} salvo={estado.salvo} />
         <h3
-          className={`text-[15px] leading-[1.45] font-semibold tracking-tight transition-colors ${
-            estado.lido ? "text-text-muted" : "text-foreground"
+          className={`text-[15px] leading-[1.4] tracking-tight transition-colors duration-150 group-hover:text-foreground ${
+            estado.lido ? "font-normal text-text-muted" : "font-bold text-foreground"
           }`}
         >
           {artigo.title}
         </h3>
-        <Meta artigo={artigo} salvo={estado.salvo} />
-        {resumo && (
-          <p className="line-clamp-2 text-[12.5px] leading-relaxed text-text-muted">{resumo}</p>
+        {previa && (
+          <p className="line-clamp-2 text-[12.5px] leading-relaxed font-light text-text-secondary">{previa}</p>
         )}
       </div>
 
       {artigo.origem === "usuario" && (
-        <div className="absolute top-4 right-3 flex translate-x-1 items-center gap-0.5 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100 focus-within:opacity-100">
+        <div className="absolute top-3 right-3 flex translate-x-1 items-center gap-0.5 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100 focus-within:opacity-100">
           <BotaoAcao
             rotulo={estado.salvo ? "Remover de Ler mais tarde" : "Ler mais tarde"}
             ativo={estado.salvo}
@@ -328,17 +338,15 @@ function LinhaArtigo({
 
 function Meta({ artigo, salvo }: { artigo: ArtigoLista; salvo: boolean }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-2 text-[12px] text-text-muted">
-      {artigo.category && (
-        <span className="rounded-md bg-accent-soft px-1.5 py-px text-accent">
-          #{artigo.category.toLowerCase()}
-        </span>
-      )}
-      <span className="text-text-secondary">{artigo.fonteNome}</span>
-      <span aria-hidden>·</span>
-      <span>{artigo.tempo}</span>
+    <div className="flex flex-wrap items-center gap-x-2 text-[11.5px]">
+      {artigo.category && <span className="font-semibold text-accent">#{artigo.category.toLowerCase()}</span>}
+      <span className="font-semibold text-text-secondary">{artigo.fonteNome}</span>
+      <span aria-hidden className="text-text-muted">
+        ·
+      </span>
+      <span className="font-light text-text-muted">{artigo.tempo}</span>
       {salvo && (
-        <span className="flex items-center gap-1 text-accent" title="Em Ler mais tarde">
+        <span className="flex items-center text-accent" title="Em Ler mais tarde">
           <Icon nome="marcador" tamanho={12} preenchido />
         </span>
       )}
@@ -366,11 +374,11 @@ function BotaoAcao({
         e.stopPropagation();
         onClick();
       }}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg transition duration-150 hover:bg-surface-active active:scale-90 ${
-        ativo ? "text-accent" : "text-text-secondary hover:text-foreground"
+      className={`flex h-8 w-8 items-center justify-center rounded-md transition duration-150 hover:bg-surface-active active:scale-90 ${
+        ativo ? "text-accent" : "text-text-secondary hover:text-accent"
       }`}
     >
-      <Icon nome={icone} tamanho={17} preenchido={ativo && icone === "marcador"} />
+      <Icon nome={icone} tamanho={16} preenchido={ativo && icone === "marcador"} />
     </button>
   );
 }

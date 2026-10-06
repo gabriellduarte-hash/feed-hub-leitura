@@ -41,7 +41,7 @@ export default async function OrganizarFontesPage() {
         />
         <button
           type="submit"
-          className="h-10 rounded-lg bg-accent px-4 text-sm font-semibold text-white transition hover:brightness-110 active:scale-[0.98]"
+          className="h-10 rounded-lg bg-foreground px-4 text-sm font-semibold text-background transition-colors hover:bg-accent active:scale-[0.98]"
         >
           Nova coleção
         </button>

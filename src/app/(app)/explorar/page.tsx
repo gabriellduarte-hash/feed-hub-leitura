@@ -113,7 +113,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
                       key={cat}
                       href={`/explorar?categoria=${encodeURIComponent(cat)}${sufixoColecao}`}
                       style={{ animationDelay: `${i * 40}ms` }}
-                      className="animate-fade-up group flex h-[124px] flex-col justify-between rounded-2xl border border-border bg-surface p-4 transition duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_10px_30px_-12px_var(--accent)]"
+                      className="animate-fade-up group flex h-[124px] flex-col justify-between rounded-lg border border-border bg-surface p-4 transition duration-200 hover:-translate-y-0.5 hover:border-accent/50 "
                     >
                       <span className="text-[15px] font-semibold text-foreground"><span className="text-accent">#</span>{cat.toLowerCase()}</span>
                       <span className="flex items-center gap-2.5">
@@ -169,7 +169,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
                     <img
                       src={faviconDe(hostDe(item.url))}
                       alt=""
-                      className="aspect-square h-12 w-12 flex-shrink-0 rounded-xl bg-surface-active p-2 ring-1 ring-border"
+                      className="aspect-square h-12 w-12 flex-shrink-0 rounded-md bg-surface-active p-2 ring-1 ring-border"
                     />
                     <div className="flex min-w-0 flex-grow flex-col gap-0.5">
                       <div className="text-[15px] font-semibold text-foreground">{item.name}</div>

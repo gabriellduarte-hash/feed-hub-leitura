@@ -31,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      data-theme="dark"
+      data-theme="light"
       suppressHydrationWarning
       className={`${jetBrainsMono.variable} ${merriweather.variable} ${inter.variable} h-full antialiased`}
     >

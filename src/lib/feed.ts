@@ -203,6 +203,7 @@ type LinhaCatalogo = {
   url: string;
   author: string | null;
   content: string | null;
+  ai_summary: string | null;
   image_url: string | null;
   published_at: string | null;
   collected_at: string;
@@ -220,7 +221,7 @@ async function buscarNoticiasDoCatalogo(
   let consulta = supabase
     .from("catalog_articles")
     .select(
-      "id, title, url, author, content, image_url, published_at, collected_at, feed_catalog!inner(id, name, url, category)",
+      "id, title, url, author, content, ai_summary, image_url, published_at, collected_at, feed_catalog!inner(id, name, url, category)",
     )
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("id")
@@ -237,7 +238,7 @@ async function buscarNoticiasDoCatalogo(
       url: l.url,
       author: l.author,
       content: l.content,
-      ai_summary: null,
+      ai_summary: l.ai_summary,
       category: l.feed_catalog.category,
       image_url: l.image_url,
       fonteId: l.feed_catalog.id,

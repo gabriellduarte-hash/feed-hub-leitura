@@ -84,7 +84,7 @@ export function Menu({
             ref={caixa}
             onClick={(e) => e.stopPropagation()}
             style={posicao}
-            className={`animate-menu-in fixed z-[70] max-h-[70vh] overflow-y-auto ${largura} rounded-lg border border-border bg-surface p-1 shadow-xl`}
+            className={`animate-menu-in fixed z-[70] max-h-[70vh] overflow-y-auto ${largura} rounded-lg border border-border bg-surface p-1 shadow-[0_12px_32px_-16px_rgba(0,0,0,0.3)]`}
           >
             {children(() => setPosicao(null))}
           </div>,

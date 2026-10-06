@@ -70,7 +70,7 @@ export function Configuracoes({ email, perfil, colecoes }: { email: string; perf
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal aria-label="Configurações">
       <div className="animate-aparece absolute inset-0 bg-overlay backdrop-blur-[2px]" onClick={() => setSecao(null)} />
-      <div className="animate-menu-in relative flex h-[min(700px,92vh)] w-full max-w-[960px] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+      <div className="animate-menu-in relative flex h-[min(700px,92vh)] w-full max-w-[960px] overflow-hidden rounded-lg border border-border bg-surface shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]">
         <nav className="flex w-[240px] flex-shrink-0 flex-col gap-0.5 border-r border-border bg-sidebar p-3">
           <div className="px-3 pt-2 pb-4 text-[17px] font-bold tracking-tight text-foreground">Configurações</div>
           {SECOES.map((s) => (
@@ -177,7 +177,7 @@ function BotaoSalvar({ pendente, children }: { pendente?: boolean; children: Rea
     <button
       type="submit"
       disabled={pendente}
-      className="h-10 w-fit rounded-lg bg-accent px-5 text-sm font-semibold text-accent-foreground transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+      className="h-10 w-fit rounded-lg bg-foreground px-5 text-sm font-semibold text-background transition-colors hover:bg-accent active:scale-[0.98] disabled:opacity-60"
     >
       {pendente ? "Salvando…" : children}
     </button>
@@ -253,7 +253,7 @@ function SecaoAparencia() {
             { valor: "gg", rotulo: "Extra grande" },
           ]}
         />
-        <p className="rounded-xl border border-border bg-background p-4 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.8] text-foreground/90">
+        <p className="rounded-md border border-border bg-background p-4 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.8] text-foreground/90">
           Assim fica o texto de um artigo aberto no painel de leitura.
         </p>
       </Grupo>
@@ -529,7 +529,7 @@ function FormResumo({
         titulo="Quem recebe"
         descricao={`Você sempre recebe. Pode mandar o mesmo resumo pra até ${inicial.limite} pessoas.`}
       >
-        <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+        <div className="flex flex-col divide-y divide-border rounded-md border border-border">
           <div className="flex items-center justify-between px-4 py-3 text-[14px]">
             <span className="truncate text-foreground">{email}</span>
             <span className="text-xs text-text-muted">você</span>
@@ -592,7 +592,7 @@ const ATALHOS: [string, string][] = [
 function SecaoAtalhos() {
   return (
     <Grupo titulo="Atalhos de teclado" descricao="Funcionam nas listas de artigos.">
-      <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+      <div className="flex flex-col divide-y divide-border rounded-md border border-border">
         {ATALHOS.map(([tecla, acao]) => (
           <div key={tecla} className="flex items-center justify-between px-4 py-3 text-[14px]">
             <span className="text-text-secondary">{acao}</span>

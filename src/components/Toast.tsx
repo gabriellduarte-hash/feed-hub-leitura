@@ -30,7 +30,7 @@ export function Toaster() {
     <div
       key={toast.id}
       role="status"
-      className="animate-toast-in fixed top-3 left-1/2 z-[60] min-w-[320px] -translate-x-1/2 rounded-xl border border-border bg-surface-active px-4 py-2.5 text-sm text-foreground shadow-2xl"
+      className="animate-toast-in fixed top-3 left-1/2 z-[60] min-w-[320px] -translate-x-1/2 rounded-md bg-foreground px-4 py-2.5 text-[13px] font-medium text-background shadow-[0_12px_32px_-16px_rgba(0,0,0,0.4)]"
     >
       {toast.texto}
     </div>

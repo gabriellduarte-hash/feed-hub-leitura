@@ -11,7 +11,7 @@ export type Preferencias = {
 };
 
 export const PADRAO: Preferencias = {
-  tema: "escuro",
+  tema: "claro",
   fonteLeitura: "mono",
   tamanhoTexto: "m",
   densidade: "confortavel",

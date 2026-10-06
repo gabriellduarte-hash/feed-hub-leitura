@@ -30,7 +30,12 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div
+      className="flex h-screen bg-background"
+      // O leitor de artigos centraliza no espaço à direita do menu: ele lê
+      // a largura atual do menu por esta variável (aberto ou recolhido).
+      style={{ "--largura-menu": recolhido ? "72px" : "264px" } as React.CSSProperties}
+    >
       <Sidebar
         dados={dados}
         recolhido={recolhido}
@@ -101,7 +106,7 @@ function IrPara({ dados, onFechar }: { dados: DadosSidebar; onFechar: () => void
     <div className="fixed inset-0 z-[55] flex items-start justify-center bg-overlay pt-[12vh]" onClick={onFechar}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="animate-menu-in w-full max-w-[520px] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
+        className="animate-menu-in w-full max-w-[520px] overflow-hidden rounded-md border border-border bg-surface shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]"
       >
         <div className="flex items-center gap-3 border-b border-border px-4">
           <Icon nome="buscar" className="text-text-muted" />

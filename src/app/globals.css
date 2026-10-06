@@ -2,35 +2,36 @@
 
 :root {
   --font-body: var(--font-technical), ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --background: #f7f7fa;
-  --sidebar: #efeff4;
-  --surface: #ffffff;
-  --surface-hover: #ebebf2;
-  --surface-active: #e2e1ec;
-  --border: #e0dfe8;
-  --foreground: #15141c;
-  --text-secondary: #545266;
-  --text-muted: #8b8999;
+  /* Plano, preto e branco em cinzas quentes; roxo só em destaque e interação */
+  --background: #f4f3f0;
+  --sidebar: #f4f3f0;
+  --surface: #fbfaf8;
+  --surface-hover: #ecebe7;
+  --surface-active: #e4e2dd;
+  --border: #e1dfda;
+  --foreground: #121212;
+  --text-secondary: #4f4d48;
+  --text-muted: #8d8a83;
   --accent: #6d3ff5;
-  --accent-soft: #ece6ff;
+  --accent-soft: #eee8ff;
   --accent-foreground: #ffffff;
-  --overlay: rgba(20, 16, 40, 0.4);
+  --overlay: rgba(18, 18, 18, 0.28);
 }
 
 [data-theme="dark"] {
-  --background: #0c0b11;
-  --sidebar: #111018;
-  --surface: #16151e;
-  --surface-hover: #1d1c28;
-  --surface-active: #252334;
-  --border: #23212f;
-  --foreground: #ecebf3;
-  --text-secondary: #a19fb3;
-  --text-muted: #6c6a7e;
-  --accent: #9478ff;
-  --accent-soft: #221b3f;
+  --background: #0f0f0f;
+  --sidebar: #0f0f0f;
+  --surface: #171717;
+  --surface-hover: #1e1e1e;
+  --surface-active: #262626;
+  --border: #262626;
+  --foreground: #f2f2f2;
+  --text-secondary: #b0b0b0;
+  --text-muted: #6e6e6e;
+  --accent: #9b80ff;
+  --accent-soft: #221b3b;
   --accent-foreground: #ffffff;
-  --overlay: rgba(5, 4, 12, 0.7);
+  --overlay: rgba(0, 0, 0, 0.6);
 }
 
 /* Preferências > Aparência: atributos postos no <html> (lib/preferencias.ts) */
@@ -128,18 +129,6 @@ body {
   }
 }
 
-@keyframes painel-entra {
-  from {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes painel-sai {
-  to {
-    transform: translateX(100%);
-  }
-}
-
 @keyframes aparece {
   from {
     opacity: 0;
@@ -152,12 +141,26 @@ body {
   }
 }
 
+@keyframes leitor-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+@keyframes leitor-sai {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+}
+
 .animate-painel-entra {
-  animation: painel-entra 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: leitor-entra 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .animate-painel-sai {
-  animation: painel-sai 220ms ease-in forwards;
+  animation: leitor-sai 180ms ease-in forwards;
 }
 
 .animate-aparece {
