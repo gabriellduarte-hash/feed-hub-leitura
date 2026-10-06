@@ -1,7 +1,7 @@
 import Form from "next/form";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { faviconDe, hostDe, origemDe } from "@/lib/fonte";
+import { faviconDe, hostDe } from "@/lib/fonte";
 import { Conteudo } from "@/components/FeedLayout";
 import { Icon, type NomeIcone } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
@@ -66,7 +66,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
           Sites
         </Aba>
         <Aba href={`/explorar?aba=url${sufixoColecao}`} ativa={aba === "url"} icone="link">
-          Por URL ou RSS
+          Por link
         </Aba>
       </nav>
 
@@ -98,13 +98,12 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
                 placeholder="Busque por tema ou site"
                 className="h-full flex-grow bg-transparent text-[15px] text-foreground outline-none placeholder:text-text-muted"
               />
-              <span className="text-sm text-text-secondary">Português</span>
             </label>
           </Form>
 
           {!listando ? (
             <>
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Explorar</h2>
+              <h2 className="mb-4 text-lg font-semibold text-foreground">Temas</h2>
               <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
                 {categorias.map((cat, i) => {
                   const destaque = catalogo.find((c) => c.category === cat)!;
@@ -150,9 +149,9 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
 
               {resultados.length === 0 && (
                 <p className="text-sm text-text-secondary">
-                  Nada no catálogo pra isso. Se você tem o link do site,{" "}
+                  Nenhuma fonte encontrada. Se você tem o endereço do site,{" "}
                   <Link href={`/explorar?aba=url${sufixoColecao}`} className="text-accent hover:underline">
-                    siga por URL ou RSS
+                    siga por link
                   </Link>
                   .
                 </p>
@@ -175,7 +174,6 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
                       <div className="text-[15px] font-semibold text-foreground">{item.name}</div>
                       <div className="truncate text-[13px] text-text-muted">
                         {hostDe(item.url)} · #{item.category.toLowerCase()}
-                        {origemDe(item.url, item.kind) && ` · via ${origemDe(item.url, item.kind)}`}
                       </div>
                       {item.description && (
                         <div className="truncate text-[13px] text-text-secondary">{item.description}</div>

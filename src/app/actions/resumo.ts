@@ -40,13 +40,13 @@ export async function salvarConfigResumo(config: ConfigResumo): Promise<{ erro?:
   const hora = Math.trunc(Number(config.horaEnvio));
   if (!(hora >= 0 && hora <= 23)) return { erro: "Horário inválido." };
   const topicIds = config.topicIds === null ? null : config.topicIds.filter((id) => UUID.test(id));
-  if (topicIds && topicIds.length === 0) return { erro: "Escolha pelo menos uma coleção, ou marque Todas." };
+  if (topicIds && topicIds.length === 0) return { erro: 'Escolha pelo menos uma coleção ou marque "Todas as coleções".' };
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { erro: "Sessão expirada. Entre de novo." };
+  if (!user) return { erro: "Sua sessão expirou. Entre de novo." };
 
   const { error } = await supabase.from("digest_settings").upsert({
     user_id: user.id,
@@ -55,7 +55,7 @@ export async function salvarConfigResumo(config: ConfigResumo): Promise<{ erro?:
     topic_ids: topicIds,
     updated_at: new Date().toISOString(),
   });
-  return error ? { erro: "Não foi possível salvar." } : {};
+  return error ? { erro: "Não foi possível salvar. Tente de novo." } : {};
 }
 
 export async function adicionarDestinatario(email: string): Promise<{ erro?: string; destinatario?: Destinatario }> {
@@ -66,23 +66,23 @@ export async function adicionarDestinatario(email: string): Promise<{ erro?: str
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { erro: "Sessão expirada. Entre de novo." };
-  if (limpo === user.email?.toLowerCase()) return { erro: "Esse já é o seu e-mail: você sempre recebe." };
+  if (!user) return { erro: "Sua sessão expirou. Entre de novo." };
+  if (limpo === user.email?.toLowerCase()) return { erro: "Esse é o seu e-mail, e você já recebe o resumo." };
 
   const { count } = await supabase.from("digest_recipients").select("id", { count: "exact", head: true });
-  if ((count ?? 0) >= LIMITE_DESTINATARIOS) return { erro: `Limite de ${LIMITE_DESTINATARIOS} destinatários atingido.` };
+  if ((count ?? 0) >= LIMITE_DESTINATARIOS) return { erro: `Você já adicionou o máximo de ${LIMITE_DESTINATARIOS} pessoas.` };
 
   const { data, error } = await supabase
     .from("digest_recipients")
     .insert({ user_id: user.id, email: limpo })
     .select("id, email")
     .single();
-  if (error) return { erro: error.code === "23505" ? "Esse e-mail já está na lista." : "Não deu pra adicionar." };
+  if (error) return { erro: error.code === "23505" ? "Esse e-mail já está na lista." : "Não foi possível adicionar. Tente de novo." };
   return { destinatario: data as Destinatario };
 }
 
 export async function removerDestinatario(id: string): Promise<{ erro?: string }> {
   const supabase = await createClient();
   const { data } = await supabase.from("digest_recipients").delete().eq("id", id).select("id");
-  return data && data.length > 0 ? {} : { erro: "Não foi possível remover." };
+  return data && data.length > 0 ? {} : { erro: "Não foi possível remover. Tente de novo." };
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { mensagemDeErro } from "@/lib/erros-auth";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -28,12 +29,12 @@ export default function LoginPage() {
     setCarregando(false);
 
     if (error) {
-      setErro(error.message);
+      setErro(mensagemDeErro(error));
       return;
     }
 
     if (modoCadastro) {
-      setAvisoCadastro("Conta criada. Fazendo login...");
+      setAvisoCadastro("Conta criada! Entrando…");
     }
 
     router.push("/");
@@ -62,7 +63,7 @@ export default function LoginPage() {
             Feed de Notícias
           </div>
           <div className="text-sm text-text-secondary">
-            Seus tópicos, organizados num só lugar.
+            As notícias das suas fontes, resumidas e num só lugar.
           </div>
         </div>
 
@@ -110,7 +111,7 @@ export default function LoginPage() {
             disabled={carregando}
             className="mt-1 h-[42px] rounded-lg bg-foreground text-sm font-bold text-background transition-colors hover:bg-accent disabled:opacity-60"
           >
-            {carregando ? "Aguarde..." : modoCadastro ? "Criar conta" : "Entrar"}
+            {carregando ? "Aguarde…" : modoCadastro ? "Criar conta" : "Entrar"}
           </button>
         </form>
 

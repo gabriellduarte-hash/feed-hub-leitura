@@ -39,8 +39,8 @@ export function FeedComSugestoes({
           {sugestoes.length === 0 && (
             <p className="text-xs leading-relaxed text-text-muted">
               {categoria
-                ? `Você já segue todas as fontes de #${categoria.toLowerCase()} do catálogo.`
-                : "Nada novo no catálogo por enquanto."}
+                ? `Você já segue todas as fontes de #${categoria.toLowerCase()}.`
+                : "Nenhuma sugestão por enquanto."}
             </p>
           )}
           {sugestoes.map((s, i) => (

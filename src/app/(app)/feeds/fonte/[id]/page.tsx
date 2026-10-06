@@ -72,8 +72,8 @@ export default async function FontePage(props: PageProps<"/feeds/fonte/[id]">) {
         lista={
           pagina.artigos.length === 0 ? (
             <Vazio
-              titulo="Nenhum artigo desta fonte ainda"
-              texto="Os artigos aparecem aqui depois da próxima coleta (roda todo dia às 6h)."
+              titulo="Nenhuma notícia desta fonte ainda"
+              texto="Novas notícias chegam a cada hora. Volte daqui a pouco."
             />
           ) : (
             <ArticleList key={id} feed={{ ...pagina, filtro: { fonteId: id } }} />

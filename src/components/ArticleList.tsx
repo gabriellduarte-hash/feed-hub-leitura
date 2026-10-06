@@ -154,7 +154,6 @@ export function ArticleList({
     return () => window.removeEventListener("keydown", aoTeclar);
   }, [aberto, alterar, estadoDe, irPara]);
 
-  const revisados = artigos.filter((a) => estadoDe(a).lido).length;
   const chegouAoFim = feed ? !temMais : mostrarFim;
 
   return (
@@ -194,7 +193,7 @@ export function ArticleList({
               onClick={carregarMais}
               className="mx-auto my-6 rounded-lg border border-border px-4 py-2 text-sm text-text-secondary transition hover:bg-surface-hover hover:text-foreground"
             >
-              Não deu pra carregar mais. Tentar de novo
+              Não foi possível carregar mais. Tentar de novo
             </button>
           ) : (
             carregando && [0, 1, 2].map((i) => <LinhaEsqueleto key={i} />)
@@ -205,11 +204,8 @@ export function ArticleList({
       {chegouAoFim && artigos.length > 0 && (
         <div className="mt-12 flex max-w-[720px] flex-col gap-8 pb-10">
           <div className="flex items-center gap-3 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
-            Fim do feed
+            Isso é tudo por enquanto
             <span className="h-px flex-grow bg-border" />
-          </div>
-          <div className="text-center text-xs text-text-muted">
-            {revisados} {revisados === 1 ? "artigo revisado" : "artigos revisados"}
           </div>
         </div>
       )}

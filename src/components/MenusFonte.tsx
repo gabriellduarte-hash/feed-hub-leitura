@@ -100,8 +100,8 @@ export function ItensMenuFonte({
         icone="lixeira"
         perigo
         onClick={() => {
-          if (window.confirm(`Deixar de seguir ${fonte.nome}? Os artigos dela saem do feed.`)) {
-            executar(() => deixarDeSeguir(fonte.id, naPagina), "Você deixou de seguir a fonte");
+          if (window.confirm(`Deixar de seguir ${fonte.nome}? As notícias dela vão sair do seu feed.`)) {
+            executar(() => deixarDeSeguir(fonte.id, naPagina), `Você deixou de seguir ${fonte.nome}`);
           } else fechar();
         }}
       >
@@ -157,7 +157,7 @@ export function ItensMenuColecao({
         onClick={() => {
           if (
             window.confirm(
-              `Excluir a coleção ${colecao.nome}? Todas as fontes dela (e os artigos) são removidas.`,
+              `Excluir a coleção ${colecao.nome}? Você vai deixar de seguir todas as fontes dela.`,
             )
           ) {
             executar(() => excluirColecao(colecao.id, naPagina), "Coleção excluída");

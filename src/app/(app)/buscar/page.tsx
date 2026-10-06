@@ -24,15 +24,14 @@ export default async function BuscarPage(props: PageProps<"/buscar">) {
             name="q"
             defaultValue={termo}
             autoFocus
-            placeholder="Buscar nos títulos e textos dos seus artigos"
+            placeholder="Buscar nas suas notícias"
             className="h-full flex-grow bg-transparent text-[15px] text-foreground outline-none placeholder:text-text-muted"
           />
-          <kbd className="rounded border border-border px-1.5 text-[11px] text-text-muted">Enter</kbd>
         </label>
       </Form>
 
       {termo && artigos.length === 0 && (
-        <p className="text-sm text-text-secondary">Nenhum artigo encontrado pra &quot;{termo}&quot;.</p>
+        <p className="text-sm text-text-secondary">Nada encontrado para &quot;{termo}&quot;.</p>
       )}
       {artigos.length > 0 && (
         <ArticleList

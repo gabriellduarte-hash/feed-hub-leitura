@@ -24,7 +24,7 @@ const inter = Inter({ variable: "--font-sans-leitura", subsets: ["latin"], displ
 
 export const metadata: Metadata = {
   title: "Feed de Notícias",
-  description: "Seus tópicos, organizados num só lugar.",
+  description: "As notícias das suas fontes, resumidas e num só lugar.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

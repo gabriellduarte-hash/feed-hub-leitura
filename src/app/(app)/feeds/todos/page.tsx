@@ -22,7 +22,7 @@ export default async function TodosPage() {
           pagina.artigos.length === 0 ? (
             <Vazio
               titulo="Nada por aqui ainda"
-              texto="Siga alguns sites e os artigos aparecem aqui."
+              texto="Siga alguns sites para ver as notícias deles aqui."
               acao={{ rotulo: "Seguir fontes", href: "/explorar" }}
             />
           ) : (

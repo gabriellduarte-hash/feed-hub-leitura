@@ -30,25 +30,22 @@ export function AdicionarFonteForm({ topicId }: { topicId: string }) {
   return (
     <form action={enviar} className="mt-2 flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-2">
-        <input name="url" required placeholder="Endereço do site ou do feed" className={`${campo} flex-grow`} />
+        <input name="url" required placeholder="Endereço do site" className={`${campo} flex-grow`} />
         <input name="nome" placeholder="Nome (opcional)" className={`${campo} w-full sm:w-40`} />
         <button
           type="submit"
           disabled={pendente}
           className="h-9 rounded-md border border-border px-3.5 text-[13px] text-foreground transition hover:bg-surface-hover active:scale-[0.98] disabled:opacity-60"
         >
-          {pendente ? "Analisando…" : "Adicionar"}
+          {pendente ? "Adicionando…" : "Adicionar"}
         </button>
       </div>
       {resultado?.erro && <p className="text-xs text-red-500">{resultado.erro}</p>}
       {resultado?.fonteId && !resultado.erro && (
         <p className="animate-fade-up text-xs text-text-secondary">
-          ✓ {resultado.nome}: {resultado.como} · {resumoDaAdicao(resultado)}
-          {resultado.coletaCompleta && !resultado.coletaCompleta.ok && (
-            <span className="text-amber-500"> · disparo da coleta falhou: {resultado.coletaCompleta.motivo}</span>
-          )}{" "}
+          ✓ Seguindo {resultado.nome}. {resumoDaAdicao(resultado)}{" "}
           <Link href={`/feeds/fonte/${resultado.fonteId}`} className="text-accent hover:underline">
-            ver notícias →
+            Ver notícias →
           </Link>
         </p>
       )}

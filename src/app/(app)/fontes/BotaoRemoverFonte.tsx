@@ -15,7 +15,7 @@ export function BotaoRemoverFonte({ id, nome }: { id: string; nome: string }) {
       aria-label={`Deixar de seguir ${nome}`}
       title="Deixar de seguir"
       onClick={() => {
-        if (!window.confirm(`Deixar de seguir ${nome}? Os artigos dela saem do feed.`)) return;
+        if (!window.confirm(`Deixar de seguir ${nome}? As notícias dela vão sair do seu feed.`)) return;
         startTransition(async () => {
           const resultado = await deixarDeSeguir(id, false);
           mostrarToast(resultado?.erro ?? `Você deixou de seguir ${nome}`);

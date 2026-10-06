@@ -45,8 +45,8 @@ export default async function ColecaoPage(props: PageProps<"/feeds/colecao/[id]"
         lista={
           pagina.artigos.length === 0 ? (
             <Vazio
-              titulo="Nenhum artigo nesta coleção"
-              texto="Adicione uma fonte a esta coleção, ou espere a próxima coleta."
+              titulo="Nenhuma notícia nesta coleção"
+              texto="Adicione algumas fontes a ela para começar."
               acao={{ rotulo: "Adicionar fonte", href: `/explorar?colecao=${id}` }}
             />
           ) : (

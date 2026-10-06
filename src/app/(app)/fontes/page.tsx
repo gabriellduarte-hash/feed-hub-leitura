@@ -29,7 +29,7 @@ export default async function OrganizarFontesPage() {
     <Conteudo>
       <PageHeader
         titulo="Organizar fontes"
-        subtitulo="Coleções agrupam suas fontes no menu lateral. Pra renomear, mover ou favoritar uma fonte, use o menu … dela no menu lateral."
+        subtitulo="Agrupe suas fontes em coleções por assunto."
       />
 
       <form action={criarTopico} className="mb-10 flex items-center gap-2">
@@ -49,9 +49,9 @@ export default async function OrganizarFontesPage() {
 
       {topicos.length === 0 && (
         <p className="text-sm text-text-secondary">
-          Nenhuma coleção ainda — crie uma acima ou{" "}
+          Você ainda não tem coleções. Crie uma acima ou{" "}
           <Link href="/explorar" className="text-accent hover:underline">
-            siga fontes do catálogo
+            siga algumas fontes
           </Link>
           .
         </p>
@@ -90,10 +90,7 @@ export default async function OrganizarFontesPage() {
                   {nomeDaFonte(fonte.name, fonte.url)}
                 </Link>
                 <span className="hidden max-w-[260px] truncate text-xs text-text-muted md:block">
-                  {fonte.url}
-                </span>
-                <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent uppercase">
-                  {fonte.type}
+                  {hostDe(fonte.url)}
                 </span>
                 <BotaoRemoverFonte id={fonte.id} nome={nomeDaFonte(fonte.name, fonte.url)} />
               </div>

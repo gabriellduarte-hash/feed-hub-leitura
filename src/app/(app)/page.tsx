@@ -17,8 +17,8 @@ export default async function InicioPage(props: PageProps<"/">) {
         titulo="Início"
         subtitulo={
           aba === "eu"
-            ? "O que chegou das fontes que você segue"
-            : "O que os canais brasileiros do catálogo estão publicando"
+            ? "As últimas das fontes que você segue"
+            : "As últimas de sites de notícias do Brasil"
         }
         acoes={aba === "eu" ? <FeedActions escopo={{ tipo: "todos" }} naoLidos={await contarNaoLidos(supabase)} /> : undefined}
       />
@@ -45,7 +45,7 @@ async function AbaEu() {
     return (
       <Vazio
         titulo="Seu feed está vazio"
-        texto="Siga alguns sites e os artigos novos aparecem aqui assim que o coletor rodar."
+        texto="Siga alguns sites para ver as notícias deles aqui."
         acao={{ rotulo: "Seguir fontes", href: "/explorar" }}
       />
     );
@@ -73,9 +73,9 @@ async function AbaExplorar({ categoria }: { categoria?: string }) {
       </div>
       {pagina.artigos.length === 0 ? (
         <Vazio
-          titulo="Ainda sem notícias do catálogo"
-          texto="O coletor traz as notícias dos canais do catálogo uma vez por dia, junto com a coleta normal (6h). Depois da próxima rodada, elas aparecem aqui."
-          acao={{ rotulo: "Ver as fontes do catálogo", href: "/explorar" }}
+          titulo="Nenhuma notícia por aqui ainda"
+          texto="Novas notícias chegam a cada hora. Volte daqui a pouco."
+          acao={{ rotulo: "Ver sites para seguir", href: "/explorar" }}
         />
       ) : (
         <ArticleList key={`explorar-${ativa ?? "tudo"}`} feed={{ ...pagina, filtro: { catalogo: true, categoria: ativa } }} />

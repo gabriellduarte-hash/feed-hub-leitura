@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { DESCRICAO_VIA, detectarFonte, type FonteDetectada } from "@/lib/descobrir-fonte";
+import { detectarFonte, type FonteDetectada } from "@/lib/descobrir-fonte";
 import { coletarFonte } from "@/lib/leitor-feeds";
 import { nomeDaFonte } from "@/lib/fonte";
 import { dispararColetaDaFonte } from "@/lib/github";
@@ -13,14 +13,10 @@ export type ResultadoAdicionar = {
   erro?: string;
   fonteId?: string;
   nome?: string;
-  /** Como a fonte foi entendida ("feed RSS", "site sem RSS, lido pelo Google Notícias"...) */
-  como?: string;
   /** Notícias que já estavam no banco (mesma fonte em outro lugar, ou catálogo) */
   importadas?: number;
   /** Notícias coletadas agora, na hora de adicionar */
   coletadas?: number;
-  /** Resultado do disparo do workflow "Fonte nova" no GitHub */
-  coletaCompleta?: { ok: boolean; motivo: string };
 };
 
 /** Usa a coleção escolhida; sem nenhuma, cria (ou reaproveita) uma com o nome sugerido. */
@@ -54,7 +50,7 @@ export async function adicionarFonte(pedido: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { erro: "Sessão expirada. Entre de novo." };
+  if (!user) return { erro: "Sua sessão expirou. Entre de novo." };
 
   // 1) o que é essa fonte?
   let fonte: FonteDetectada | undefined;
@@ -65,7 +61,7 @@ export async function adicionarFonte(pedido: {
       .select("name, url, category, kind")
       .eq("id", pedido.catalogoId)
       .maybeSingle();
-    if (!item) return { erro: "Fonte não encontrada no catálogo." };
+    if (!item) return { erro: "Essa fonte não está mais disponível." };
     fonte = { url: item.url, tipo: item.kind === "sitemap" ? "sitemap" : "rss", nome: item.name, via: "catalogo" };
     categoriaSugerida = item.category;
   } else {
@@ -108,7 +104,7 @@ export async function adicionarFonte(pedido: {
     .insert({ topic_id: colecao, url: fonte.url, name: nome, type: fonte.tipo })
     .select("id")
     .single();
-  if (error || !criada) return { erro: "Não foi possível adicionar a fonte. Tenta de novo." };
+  if (error || !criada) return { erro: "Não foi possível adicionar a fonte. Tente de novo." };
 
   // 3) notícias que já estão no banco
   const { data: importadas } = await supabase.rpc("importar_noticias_existentes", { p_source_id: criada.id });
@@ -132,16 +128,17 @@ export async function adicionarFonte(pedido: {
     // segue sem as notícias de agora
   }
 
-  // Coleta completa + resumo da IA no GitHub Actions (se configurado)
-  const coletaCompleta = await dispararColetaDaFonte(criada.id);
+  // Coleta completa + resumo da IA no GitHub Actions (se configurado).
+  // Se falhar, só vai pro log da Vercel: a fonte já está adicionada e a
+  // coleta de hora em hora completa o resto.
+  const disparo = await dispararColetaDaFonte(criada.id);
+  if (!disparo.ok) console.warn(`[fonte-nova] ${disparo.motivo}`);
 
   revalidatePath("/", "layout");
   return {
     fonteId: criada.id,
     nome: nomeDaFonte(nome, fonte.url),
-    como: DESCRICAO_VIA[fonte.via],
     importadas: typeof importadas === "number" ? importadas : 0,
     coletadas,
-    coletaCompleta,
   };
 }

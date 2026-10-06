@@ -216,7 +216,6 @@ export function ArticlePanel({
                 alt=""
                 className="aspect-[16/9] w-full bg-surface-active object-cover md:aspect-[21/9] md:rounded-md"
               />
-              <figcaption className="mt-2 px-5 text-[11px] font-light text-text-muted md:px-0">Imagem: {a.fonteNome}</figcaption>
             </figure>
           )}
           <article className={`animate-fade-up mx-auto max-w-[720px] px-5 pb-20 sm:px-8 md:px-10 ${a.image_url ? "pt-8 md:pt-10" : "pt-10 md:pt-14"}`}>
@@ -275,7 +274,7 @@ export function ArticlePanel({
 
             {!a.ai_summary && !temTexto && (
               <p className="mt-10 text-[14px] text-text-secondary">
-                Esta fonte não mandou texto junto com a notícia. Leia a matéria completa no site.
+                O texto completo desta notícia está no site.
               </p>
             )}
 
@@ -293,11 +292,6 @@ export function ArticlePanel({
                   className="transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                 />
               </a>
-              <p className="text-[11px] font-light text-text-muted">
-                <b className="font-semibold">j</b>/<b className="font-semibold">k</b> próximo/anterior ·{" "}
-                <b className="font-semibold">m</b> lido · <b className="font-semibold">s</b> ler mais tarde ·{" "}
-                <b className="font-semibold">v</b> abrir original · <b className="font-semibold">Esc</b> fechar
-              </p>
             </div>
           </article>
         </div>

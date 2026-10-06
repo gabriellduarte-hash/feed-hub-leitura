@@ -10,6 +10,7 @@ import {
   type ConfigResumo,
   type Destinatario,
 } from "@/app/actions/resumo";
+import { mensagemDeErro } from "@/lib/erros-auth";
 import { createClient } from "@/lib/supabase/client";
 import { usePreferencias } from "@/lib/usePreferencias";
 import type { Preferencias } from "@/lib/preferencias";
@@ -190,28 +191,27 @@ function SecaoGeral() {
   const [p, alterar] = usePreferencias();
   return (
     <>
-      <Grupo titulo="Leitura" descricao="Como os artigos se comportam quando você lê.">
+      <Grupo titulo="Leitura">
         <div className="flex flex-col gap-5">
           <Chave
-            rotulo="Marcar como lido ao abrir"
-            detalhe="Abrir um artigo já conta como lido (como na Feedly)."
+            rotulo="Marcar como lida ao abrir"
             ligado={p.marcarLidoAoAbrir}
             onChange={(v) => alterar({ marcarLidoAoAbrir: v })}
           />
           <Chave
-            rotulo="Esconder artigos já lidos"
-            detalhe="Os lidos somem da lista na próxima vez que ela carregar."
+            rotulo="Esconder notícias já lidas"
+            detalhe="Elas somem da lista na próxima vez que você abrir a página."
             ligado={p.esconderLidos}
             onChange={(v) => alterar({ esconderLidos: v })}
           />
           <Chave
-            rotulo='Confirmar antes de "marcar tudo como lido"'
+            rotulo="Pedir confirmação antes de marcar tudo como lido"
             ligado={p.confirmarMarcarTudo}
             onChange={(v) => alterar({ confirmarMarcarTudo: v })}
           />
         </div>
       </Grupo>
-      <p className="text-xs text-text-muted">Essas preferências ficam salvas neste navegador.</p>
+      <p className="text-xs text-text-muted">Essas preferências valem só neste aparelho.</p>
     </>
   );
 }
@@ -220,25 +220,25 @@ function SecaoAparencia() {
   const [p, alterar] = usePreferencias();
   return (
     <>
-      <Grupo titulo="Tema" descricao="Claro, escuro, ou acompanhar o sistema.">
+      <Grupo titulo="Tema">
         <Opcoes<Preferencias["tema"]>
           valor={p.tema}
           onChange={(tema) => alterar({ tema })}
           opcoes={[
-            { valor: "sistema", rotulo: "Preferência do sistema" },
-            { valor: "claro", rotulo: "Tema claro" },
-            { valor: "escuro", rotulo: "Tema escuro" },
+            { valor: "claro", rotulo: "Claro" },
+            { valor: "escuro", rotulo: "Escuro" },
+            { valor: "sistema", rotulo: "Automático", detalhe: "igual ao do aparelho" },
           ]}
         />
       </Grupo>
-      <Grupo titulo="Fonte do texto" descricao="Usada no texto dos artigos, no painel de leitura.">
+      <Grupo titulo="Fonte do texto" descricao="Usada quando você abre uma notícia para ler.">
         <Opcoes<Preferencias["fonteLeitura"]>
           valor={p.fonteLeitura}
           onChange={(fonteLeitura) => alterar({ fonteLeitura })}
           opcoes={[
             { valor: "mono", rotulo: "JetBrains Mono", detalhe: "padrão" },
-            { valor: "serifa", rotulo: "Merriweather", detalhe: "serifada, boa pra textos longos" },
-            { valor: "sans", rotulo: "Inter", detalhe: "sem serifa" },
+            { valor: "serifa", rotulo: "Merriweather", detalhe: "clássica, boa para textos longos" },
+            { valor: "sans", rotulo: "Inter", detalhe: "moderna e limpa" },
           ]}
         />
       </Grupo>
@@ -254,15 +254,15 @@ function SecaoAparencia() {
           ]}
         />
         <p className="rounded-md border border-border bg-background p-4 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.8] text-foreground/90">
-          Assim fica o texto de um artigo aberto no painel de leitura.
+          É assim que o texto vai aparecer quando você abrir uma notícia.
         </p>
       </Grupo>
-      <Grupo titulo="Densidade da lista" descricao="Espaço entre os artigos e tamanho da capa.">
+      <Grupo titulo="Espaçamento da lista">
         <Opcoes<Preferencias["densidade"]>
           valor={p.densidade}
           onChange={(densidade) => alterar({ densidade })}
           opcoes={[
-            { valor: "compacta", rotulo: "Compacta", detalhe: "mais artigos na tela" },
+            { valor: "compacta", rotulo: "Compacta", detalhe: "mais notícias na tela" },
             { valor: "confortavel", rotulo: "Confortável" },
             { valor: "espacosa", rotulo: "Espaçosa", detalhe: "capas maiores" },
           ]}
@@ -353,7 +353,7 @@ function SecaoAcesso() {
     setErro(null);
     startTransition(async () => {
       const { error } = await createClient().auth.updateUser({ password: senha });
-      if (error) return setErro(error.message);
+      if (error) return setErro(mensagemDeErro(error));
       setSenha("");
       setConfirmacao("");
       mostrarToast("Senha alterada");
@@ -379,7 +379,7 @@ function SecaoAcesso() {
           <BotaoSalvar pendente={pendente}>Alterar senha</BotaoSalvar>
         </form>
       </Grupo>
-      <Grupo titulo="Sessões" descricao="Se você entrou num computador que não é seu, encerre as sessões de todos os aparelhos.">
+      <Grupo titulo="Aparelhos conectados" descricao="Entrou na sua conta num aparelho que não é seu? Saia de todos de uma vez.">
         <button
           type="button"
           onClick={sairDeTodos}
@@ -406,7 +406,7 @@ function SecaoResumo({ email, colecoes }: { email: string; colecoes: Colecao[] }
     };
   }, []);
 
-  if (falhou) return <p className="text-sm text-red-500">Não foi possível carregar as configurações do resumo.</p>;
+  if (falhou) return <p className="text-sm text-red-500">Não foi possível carregar o resumo diário. Tente de novo.</p>;
   if (!dados) return <p className="animate-pulse text-sm text-text-muted">Carregando…</p>;
   return <FormResumo email={email} colecoes={colecoes} inicial={dados} />;
 }
@@ -451,7 +451,7 @@ function FormResumo({
     setErroLista(null);
     startLista(async () => {
       const r = await adicionarDestinatario(novoEmail);
-      if (r.erro || !r.destinatario) return setErroLista(r.erro ?? "Não deu pra adicionar.");
+      if (r.erro || !r.destinatario) return setErroLista(r.erro ?? "Não foi possível adicionar. Tente de novo.");
       setDestinatarios((d) => [...d, r.destinatario!]);
       setNovoEmail("");
     });
@@ -468,7 +468,7 @@ function FormResumo({
   return (
     <>
       <form onSubmit={salvar} className="flex flex-col gap-8">
-        <Grupo titulo="Resumo diário por e-mail" descricao="A IA resume os artigos novos das últimas 24h, agrupados por categoria.">
+        <Grupo titulo="Resumo diário por e-mail" descricao="Um e-mail por dia com as notícias das suas fontes, já resumidas.">
           <Chave
             rotulo="Receber o resumo diário"
             ligado={config.ativo}
@@ -491,7 +491,7 @@ function FormResumo({
             </select>
           </Grupo>
 
-          <Grupo titulo="Coleções no resumo">
+          <Grupo titulo="O que entra no resumo">
             <Opcoes<"todas" | "escolher">
               valor={todas ? "todas" : "escolher"}
               onChange={(v) => setConfig({ ...config, topicIds: v === "todas" ? null : colecoes.map((c) => c.id) })}
@@ -527,7 +527,7 @@ function FormResumo({
 
       <Grupo
         titulo="Quem recebe"
-        descricao={`Você sempre recebe. Pode mandar o mesmo resumo pra até ${inicial.limite} pessoas.`}
+        descricao={`Você pode compartilhar o resumo com até ${inicial.limite} pessoas.`}
       >
         <div className="flex flex-col divide-y divide-border rounded-md border border-border">
           <div className="flex items-center justify-between px-4 py-3 text-[14px]">
@@ -568,30 +568,26 @@ function FormResumo({
             </button>
           </form>
         ) : (
-          <p className="text-xs text-text-muted">Limite de {inicial.limite} destinatários atingido.</p>
+          <p className="text-xs text-text-muted">Você já adicionou o máximo de {inicial.limite} pessoas.</p>
         )}
         {erroLista && <p className="text-sm text-red-500">{erroLista}</p>}
-        <p className="text-xs leading-relaxed text-text-muted">
-          Enquanto o domínio de envio não for verificado no Resend, só o e-mail da conta Resend recebe de verdade. Os
-          outros ficam na lista e passam a receber quando o domínio for configurado.
-        </p>
       </Grupo>
     </>
   );
 }
 
 const ATALHOS: [string, string][] = [
-  ["j / k", "Próximo / anterior artigo"],
+  ["j / k", "Próxima / anterior notícia"],
   ["m", "Marcar como lido / não lido"],
   ["s", "Ler mais tarde"],
   ["v", "Abrir o original numa nova aba"],
-  ["Esc", "Fechar o painel ou esta janela"],
-  ["Ctrl K", "Ir para… (buscar fonte, coleção ou página)"],
+  ["Esc", "Fechar a notícia ou esta janela"],
+  ["Ctrl K", "Ir para uma fonte, coleção ou página"],
 ];
 
 function SecaoAtalhos() {
   return (
-    <Grupo titulo="Atalhos de teclado" descricao="Funcionam nas listas de artigos.">
+    <Grupo titulo="Atalhos de teclado" descricao="Funcionam nas listas de notícias e na leitura.">
       <div className="flex flex-col divide-y divide-border rounded-md border border-border">
         {ATALHOS.map(([tecla, acao]) => (
           <div key={tecla} className="flex items-center justify-between px-4 py-3 text-[14px]">

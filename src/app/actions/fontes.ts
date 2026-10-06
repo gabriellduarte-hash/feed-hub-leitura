@@ -14,7 +14,7 @@ function conferir(
   semPermissao: string,
 ): Resultado {
   if (resposta.error?.code === "23505") return { erro: "Essa coleção já segue essa fonte." };
-  if (resposta.error) return { erro: "Algo deu errado. Tenta de novo." };
+  if (resposta.error) return { erro: "Algo deu errado. Tente de novo." };
   if (!resposta.data || resposta.data.length === 0) return { erro: semPermissao };
   revalidatePath("/", "layout");
 }
@@ -49,7 +49,7 @@ export async function deixarDeSeguir(id: string, estavaNaPagina: boolean): Promi
   const supabase = await createClient();
   const resultado = conferir(
     await supabase.from("sources").delete().eq("id", id).select("id"),
-    "Não foi possível deixar de seguir (sem permissão no banco).",
+    "Não foi possível deixar de seguir essa fonte. Tente de novo.",
   );
   if (!resultado && estavaNaPagina) redirect("/feeds/todos");
   return resultado;
@@ -62,7 +62,7 @@ export async function criarColecao(nome: string): Promise<Resultado> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { erro: "Sessão expirada. Entre de novo." };
+  if (!user) return { erro: "Sua sessão expirou. Entre de novo." };
   return conferir(
     await supabase.from("topics").insert({ user_id: user.id, name: limpo }).select("id"),
     "Não foi possível criar a coleção.",

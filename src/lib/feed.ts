@@ -277,21 +277,6 @@ const CATEGORIAS = [
   "Saúde", "Esportes", "Entretenimento", "Mundo", "Outros",
 ];
 
-export function agruparPorCategoria(artigos: ArtigoLista[]): Secao[] {
-  const grupos = new Map<string, ArtigoLista[]>();
-  for (const a of artigos) {
-    const chave = a.category ?? "Aguardando resumo";
-    if (!grupos.has(chave)) grupos.set(chave, []);
-    grupos.get(chave)!.push(a);
-  }
-  return [...CATEGORIAS, "Aguardando resumo"]
-    .filter((c) => grupos.has(c))
-    .map((c) => ({
-      titulo: c === "Aguardando resumo" ? c : `Destaques em ${c}`,
-      artigos: grupos.get(c)!,
-    }));
-}
-
 export type Sugestao = { id: string; nome: string; host: string; descricao: string | null; categoria: string };
 
 function normalizar(texto: string) {

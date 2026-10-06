@@ -21,8 +21,8 @@ export default async function LidosRecentementePage() {
       <PageHeader titulo="Lidos recentemente" />
       {artigos.length === 0 ? (
         <Vazio
-          titulo="Nenhum artigo lido ainda"
-          texto="Os artigos que você abrir ou marcar como lidos aparecem aqui."
+          titulo="Nenhuma notícia lida ainda"
+          texto="As notícias que você abrir aparecem aqui."
         />
       ) : (
         <ArticleList secoes={[{ titulo: "Mais recentes", artigos }]} mostrarFim />

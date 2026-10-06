@@ -20,7 +20,6 @@ export default async function LerMaisTardePage() {
   return (
     <Conteudo>
       <PageHeader
-        sobretitulo="Quadro"
         titulo="Ler mais tarde"
         acoes={
           <FeedActions
@@ -32,7 +31,7 @@ export default async function LerMaisTardePage() {
       {artigos.length === 0 ? (
         <Vazio
           titulo="Nada salvo ainda"
-          texto="Passe o mouse num artigo e clique no marcador (ou aperte s com o artigo aberto) pra guardar aqui."
+          texto="Toque no marcador de uma notícia para guardá-la aqui e ler quando quiser."
         />
       ) : (
         <ArticleList secoes={[{ titulo: "Mais recentes", artigos }]} mostrarFim />

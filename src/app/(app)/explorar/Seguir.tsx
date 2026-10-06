@@ -11,9 +11,8 @@ type Colecao = { id: string; nome: string };
 
 export function resumoDaAdicao(r: ResultadoAdicionar) {
   const total = (r.importadas ?? 0) + (r.coletadas ?? 0);
-  return total > 0
-    ? `${total} ${total === 1 ? "notícia carregada" : "notícias carregadas"}`
-    : "sem notícias por enquanto — chegam na próxima coleta";
+  if (total === 1) return "1 notícia já está no seu feed.";
+  return total > 0 ? `${total} notícias já estão no seu feed.` : "As primeiras notícias chegam em breve.";
 }
 
 export function BotaoSeguir({
@@ -40,10 +39,7 @@ export function BotaoSeguir({
         setSeguindo(false);
         mostrarToast(r.erro);
       } else {
-        mostrarToast(
-          `Seguindo ${nome} em ${colecao?.nome ?? categoria} · ${resumoDaAdicao(r)}` +
-            (r.coletaCompleta && !r.coletaCompleta.ok ? ` · disparo da coleta falhou: ${r.coletaCompleta.motivo}` : ""),
-        );
+        mostrarToast(`Seguindo ${nome} em ${colecao?.nome ?? categoria}. ${resumoDaAdicao(r)}`);
       }
     });
   }
@@ -97,7 +93,7 @@ export function BotaoSeguir({
 const campo =
   "h-11 rounded-lg border border-border bg-surface px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-text-muted focus:border-text-muted";
 
-/** Formulário "Por URL": cola qualquer link (site ou RSS) e o hub descobre sozinho. */
+/** Formulário "Por link": cola qualquer link (site ou RSS) e o hub descobre sozinho. */
 export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Colecao[]; colecaoPreferida?: string }) {
   const [pendente, startTransition] = useTransition();
   const [resultado, setResultado] = useState<ResultadoAdicionar | null>(null);
@@ -119,11 +115,9 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
   return (
     <form action={enviar} className="flex max-w-[620px] flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="text-[13px] text-text-secondary">Endereço do site ou do feed</span>
-        <input name="url" required placeholder="ex.: tecmundo.com.br ou https://site.com.br/feed" className={campo} />
-        <span className="text-xs text-text-muted">
-          Não precisa saber se é RSS: o hub descobre sozinho (RSS, sitemap de notícias ou Google Notícias).
-        </span>
+        <span className="text-[13px] text-text-secondary">Endereço do site</span>
+        <input name="url" required placeholder="ex.: tecmundo.com.br" className={campo} />
+        <span className="text-xs text-text-muted">Também aceita o link de um feed RSS, se você tiver.</span>
       </label>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -146,7 +140,7 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
         ) : (
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] text-text-secondary">Nome (opcional)</span>
-            <input name="nome" placeholder="Usa o nome do site" className={campo} />
+            <input name="nome" placeholder="Se ficar vazio, usamos o do site" className={campo} />
           </label>
         )}
       </div>
@@ -157,11 +151,8 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
           disabled={pendente}
           className="h-10 rounded-lg bg-foreground px-5 text-sm font-semibold text-background transition-colors hover:bg-accent active:scale-[0.98] disabled:opacity-60"
         >
-          {pendente ? "Analisando o site…" : "Seguir"}
+          {pendente ? "Procurando notícias…" : "Seguir"}
         </button>
-        {pendente && (
-          <span className="animate-pulse text-xs text-text-muted">procurando RSS, sitemap e notícias recentes</span>
-        )}
       </div>
 
       {resultado?.erro && (
@@ -176,15 +167,8 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
       )}
       {resultado?.fonteId && !resultado.erro && (
         <div className="animate-fade-up flex flex-col gap-1 rounded-md border border-accent/40 bg-accent-soft/50 p-4 text-sm">
-          <span className="font-semibold text-foreground">✓ {resultado.nome} adicionada</span>
-          <span className="text-text-secondary">Detectado: {resultado.como}</span>
+          <span className="font-semibold text-foreground">Pronto! Você está seguindo {resultado.nome}.</span>
           <span className="text-text-secondary">{resumoDaAdicao(resultado)}</span>
-          {resultado.coletaCompleta && (
-            <span className={resultado.coletaCompleta.ok ? "text-text-secondary" : "text-amber-500"}>
-              {resultado.coletaCompleta.ok ? "✓ " : "Texto completo e resumo da IA: "}
-              {resultado.coletaCompleta.motivo}
-            </span>
-          )}
           <Link href={`/feeds/fonte/${resultado.fonteId}`} className="mt-1 w-fit text-accent hover:underline">
             Ver notícias →
           </Link>

@@ -19,15 +19,6 @@ export type FonteDetectada = {
   via: Via;
 };
 
-export const DESCRICAO_VIA: Record<Via, string> = {
-  catalogo: "fonte do catálogo",
-  rss: "feed RSS",
-  "rss-na-pagina": "site com RSS (descoberto automaticamente)",
-  sitemap: "site sem RSS, lido pelo sitemap de notícias",
-  "google-news": "site sem RSS, lido pelo Google Notícias",
-  pagina: "página avulsa (sem RSS nem sitemap)",
-};
-
 const CAMINHOS_COMUNS = ["/feed", "/feed/", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml"];
 
 export function normalizarEntrada(entrada: string): URL | null {
@@ -100,7 +91,7 @@ export async function detectarFonte(
   entrada: string,
 ): Promise<{ fonte?: FonteDetectada; erro?: string; catalogoId?: string }> {
   const url = normalizarEntrada(entrada);
-  if (!url) return { erro: "Isso não parece um endereço de site. Ex.: https://site.com.br" };
+  if (!url) return { erro: "Esse endereço não parece válido. Tente algo como tecmundo.com.br" };
   const ehPaginaInicial = url.pathname.replace(/\/+$/, "") === "";
 
   // 1) catálogo
@@ -170,5 +161,5 @@ export async function detectarFonte(
     const artigo = await lerPagina(pagina.url).catch(() => []);
     if (artigo.length > 0) return { fonte: { url: pagina.url, tipo: "scrape", nome: nomeSite, via: "pagina" } };
   }
-  return { erro: "Não encontramos notícias nesse endereço (nem RSS, nem sitemap, nem no Google Notícias)." };
+  return { erro: "Não encontramos notícias nesse site. Confira o endereço ou tente a página inicial dele." };
 }

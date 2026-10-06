@@ -34,7 +34,13 @@ export function FeedActions({
   const [preferencias] = usePreferencias();
 
   function marcarTudo() {
-    if (preferencias.confirmarMarcarTudo && !window.confirm(`Marcar ${naoLidos ?? "todos os"} artigos como lidos?`)) return;
+    if (preferencias.confirmarMarcarTudo && !window.confirm(
+        naoLidos === 1
+          ? "Marcar 1 notícia como lida?"
+          : naoLidos
+            ? `Marcar ${naoLidos} notícias como lidas?`
+            : "Marcar todas as notícias como lidas?",
+      )) return;
     startTransition(async () => {
       await marcarTudoComoLido(escopo);
       mostrarToast("Tudo marcado como lido");

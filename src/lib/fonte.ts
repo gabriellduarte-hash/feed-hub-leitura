@@ -13,12 +13,6 @@ export function hostDe(url: string) {
   }
 }
 
-/** Como o coletor lê a fonte, pra mostrar ao usuário ("via ..."). */
-export function origemDe(url: string, kind?: string | null) {
-  if (kind === "sitemap") return "sitemap de notícias";
-  return url.startsWith("https://news.google.com/") ? "Google Notícias" : null;
-}
-
 export function nomeDaFonte(nome: string | null, url: string) {
   return nome?.trim() || hostDe(url);
 }

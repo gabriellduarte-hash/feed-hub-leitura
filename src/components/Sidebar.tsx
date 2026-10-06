@@ -311,7 +311,7 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
   }
 
   function marcarTodasLidas() {
-    if (!window.confirm("Marcar todos os artigos de todas as coleções como lidos?")) return;
+    if (!window.confirm("Marcar todas as notícias como lidas?")) return;
     startTransition(async () => {
       await marcarTudoComoLido({ tipo: "todos" });
       mostrarToast("Tudo marcado como lido");

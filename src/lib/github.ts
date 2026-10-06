@@ -10,8 +10,8 @@
  *                         só no repositório do coletor
  *   GITHUB_REPO_COLETOR   ex.: gabriellduarte-hash/feed-noticias-personalizado
  *
- * Devolve o que aconteceu, pra aparecer na tela e no log da Vercel: o
- * erro do GitHub sozinho não chega a lugar nenhum.
+ * Devolve o que aconteceu, pra quem chamou registrar no log da Vercel:
+ * o erro do GitHub sozinho não chega a lugar nenhum.
  */
 export type ResultadoDisparo = { ok: boolean; motivo: string };
 
