@@ -126,7 +126,7 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
         </span>
       </label>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
           <span className="text-[13px] text-text-secondary">Coleção</span>
           <select value={colecao} onChange={(e) => setColecao(e.target.value)} className={campo}>

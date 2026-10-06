@@ -84,14 +84,11 @@ export function ArticlePanel({
   const temTexto = blocos.length > 0 && a.content !== a.ai_summary;
 
   return (
-    <div className="fixed inset-y-0 right-0 left-0 z-50 flex items-center justify-center p-3 md:left-[var(--largura-menu)] md:p-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center md:left-[var(--largura-menu)] md:p-5 lg:p-6">
       <div
         onClick={onFechar}
         className={`absolute inset-0 bg-overlay ${saindo ? "animate-some" : "animate-aparece"}`}
       />
-
-      {temAnterior && <SetaNavegacao lado="esquerda" onClick={() => onNavegar(-1)} />}
-      {temProximo && <SetaNavegacao lado="direita" onClick={() => onNavegar(1)} />}
 
       <div
         role="dialog"
@@ -100,7 +97,7 @@ export function ArticlePanel({
         onAnimationEnd={(ev) => {
           if (saindo && ev.target === ev.currentTarget) onSaiu();
         }}
-        className={`relative flex h-full max-h-[920px] w-full max-w-[820px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)] ${
+        className={`relative flex h-full w-full max-w-[1280px] flex-col overflow-hidden bg-surface shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)] md:rounded-lg md:border md:border-border ${
           saindo ? "animate-painel-sai" : "animate-painel-entra"
         }`}
       >
@@ -143,7 +140,7 @@ export function ArticlePanel({
               rel="noreferrer"
               className="group ml-1 flex h-8 items-center gap-1.5 rounded-md bg-foreground px-3 text-[12px] font-semibold text-background transition-colors duration-150 hover:bg-accent active:scale-[0.97]"
             >
-              Abrir original
+              <span className="hidden sm:inline">Abrir original</span>
               <Icon
                 nome="externo"
                 tamanho={13}
@@ -198,6 +195,10 @@ export function ArticlePanel({
           />
         </header>
 
+        {/* setas nas margens do leitor (só em tela larga, onde sobra espaço ao lado do texto) */}
+        {temAnterior && <SetaNavegacao lado="esquerda" onClick={() => onNavegar(-1)} />}
+        {temProximo && <SetaNavegacao lado="direita" onClick={() => onNavegar(1)} />}
+
         <div
           key={a.id}
           onScroll={(ev) => {
@@ -205,16 +206,27 @@ export function ArticlePanel({
             const total = el.scrollHeight - el.clientHeight;
             setRolagem({ id: a.id, valor: total > 0 ? el.scrollTop / total : 1 });
           }}
-          className="flex-grow overflow-y-auto"
+          className="relative flex-grow overflow-y-auto"
         >
-          <article className="animate-fade-up mx-auto max-w-[640px] px-7 pt-12 pb-20 md:px-10">
+          {a.image_url && (
+            <figure className="animate-fade-up mx-auto max-w-[960px] md:px-10 md:pt-8">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={a.image_url}
+                alt=""
+                className="aspect-[16/9] w-full bg-surface-active object-cover md:aspect-[21/9] md:rounded-md"
+              />
+              <figcaption className="mt-2 px-5 text-[11px] font-light text-text-muted md:px-0">Imagem: {a.fonteNome}</figcaption>
+            </figure>
+          )}
+          <article className={`animate-fade-up mx-auto max-w-[720px] px-5 pb-20 sm:px-8 md:px-10 ${a.image_url ? "pt-8 md:pt-10" : "pt-10 md:pt-14"}`}>
             <div className="flex flex-wrap items-center gap-x-2 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
               {a.category && <span className="text-accent">{a.category}</span>}
               {a.category && <span aria-hidden>/</span>}
               <span>{minutosDeLeitura(a)} min de leitura</span>
             </div>
 
-            <h1 className="mt-4 text-[30px] leading-[1.15] font-extrabold tracking-tight text-balance text-foreground">
+            <h1 className="mt-4 text-[24px] leading-[1.15] font-extrabold tracking-tight text-balance text-foreground sm:text-[30px] lg:text-[34px]">
               {a.title}
             </h1>
 
@@ -231,14 +243,6 @@ export function ArticlePanel({
                 </h2>
                 <ResumoFormatado texto={a.ai_summary} />
               </section>
-            )}
-
-            {a.image_url && (
-              <figure className="mt-10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={a.image_url} alt="" className="w-full rounded-md border border-border" />
-                <figcaption className="mt-2 text-[11px] font-light text-text-muted">Imagem: {a.fonteNome}</figcaption>
-              </figure>
             )}
 
             {temTexto && (
@@ -334,8 +338,8 @@ function SetaNavegacao({ lado, onClick }: { lado: "esquerda" | "direita"; onClic
       type="button"
       onClick={onClick}
       title={lado === "direita" ? "Próximo (j)" : "Anterior (k)"}
-      className={`absolute top-1/2 z-10 hidden h-11 w-9 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface text-text-secondary transition-colors hover:border-accent hover:text-accent lg:flex ${
-        lado === "direita" ? "right-2" : "left-2"
+      className={`absolute top-1/2 z-10 hidden h-11 w-9 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-surface text-text-secondary transition-colors hover:border-accent hover:text-accent xl:flex ${
+        lado === "direita" ? "right-3" : "left-3"
       }`}
     >
       <Icon nome={lado === "direita" ? "chevronDireita" : "chevronEsquerda"} tamanho={18} />

@@ -42,7 +42,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="flex w-[380px] flex-col gap-7">
+      <div className="flex w-full max-w-[380px] flex-col gap-7 px-4">
         <div className="flex flex-col items-center gap-2.5 text-center">
           <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent">
             <svg

@@ -1,12 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { Sidebar, type DadosSidebar } from "./Sidebar";
-import { Configuracoes } from "./Configuracoes";
+import { abrirConfiguracoes, Configuracoes, estiloAvatar } from "./Configuracoes";
 import { Toaster } from "./Toast";
 
 export function AppShell({ dados, children }: { dados: DadosSidebar; children: React.ReactNode }) {
@@ -29,21 +30,49 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
     setValorRecolhido(recolhido ? "0" : "1");
   }
 
+  const [gavetaAberta, setGavetaAberta] = useState(false);
+
   return (
     <div
-      className="flex h-screen bg-background"
+      className="flex h-[100dvh] bg-background"
       // O leitor de artigos centraliza no espaço à direita do menu: ele lê
       // a largura atual do menu por esta variável (aberto ou recolhido).
       style={{ "--largura-menu": recolhido ? "72px" : "264px" } as React.CSSProperties}
     >
-      <Sidebar
-        dados={dados}
-        recolhido={recolhido}
-        onAlternar={alternar}
-        onIrPara={() => setIrParaAberto(true)}
-      />
+      {/* computador: menu lateral fixo */}
+      <div className="hidden md:flex">
+        <Sidebar dados={dados} recolhido={recolhido} onAlternar={alternar} onIrPara={() => setIrParaAberto(true)} />
+      </div>
 
-      <main className="relative min-w-0 flex-grow overflow-y-auto">{children}</main>
+      <div className="flex min-w-0 flex-grow flex-col">
+        <BarraTopoMobile />
+        <main className="relative min-w-0 flex-grow overflow-y-auto">{children}</main>
+        <BarraAbasMobile dados={dados} onAbrirFeeds={() => setGavetaAberta(true)} />
+      </div>
+
+      {/* celular: o mesmo menu, como gaveta que desliza da esquerda */}
+      {gavetaAberta && (
+        <div className="fixed inset-0 z-[55] md:hidden">
+          <div className="animate-aparece absolute inset-0 bg-overlay" onClick={() => setGavetaAberta(false)} />
+          <div
+            className="animate-gaveta absolute inset-y-0 left-0 flex shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]"
+            // tocar num link (fonte, coleção, página) fecha a gaveta
+            onClickCapture={(e) => {
+              if ((e.target as HTMLElement).closest("a")) setGavetaAberta(false);
+            }}
+          >
+            <Sidebar
+              dados={dados}
+              recolhido={false}
+              onAlternar={() => setGavetaAberta(false)}
+              onIrPara={() => {
+                setGavetaAberta(false);
+                setIrParaAberto(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {irParaAberto && <IrPara dados={dados} onFechar={() => setIrParaAberto(false)} />}
       <Configuracoes
@@ -53,6 +82,89 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
       />
       <Toaster />
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ mobile */
+
+function BarraTopoMobile() {
+  return (
+    <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border bg-background px-4 md:hidden">
+      <Link href="/" className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-background">
+          <Icon nome="rss" tamanho={16} espessura={2.2} />
+        </span>
+        <span className="text-[14px] font-extrabold tracking-tight text-foreground">Feed de Notícias</span>
+      </Link>
+      <Link
+        href="/explorar"
+        aria-label="Seguir fontes"
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-accent transition-colors active:bg-accent-soft"
+      >
+        <Icon nome="adicionar" tamanho={18} espessura={2} />
+      </Link>
+    </header>
+  );
+}
+
+function BarraAbasMobile({ dados, onAbrirFeeds }: { dados: DadosSidebar; onAbrirFeeds: () => void }) {
+  const pathname = usePathname();
+  const inicial = (dados.perfil.nome || dados.email).charAt(0).toUpperCase();
+  return (
+    <nav className="flex flex-shrink-0 items-stretch justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
+      <AbaMobile href="/" icone="casa" rotulo="Início" ativo={pathname === "/"} />
+      <AbaMobile href="/buscar" icone="buscar" rotulo="Buscar" ativo={pathname.startsWith("/buscar")} />
+      <AbaMobile icone="camadas" rotulo="Feeds" ativo={pathname.startsWith("/feeds")} onClick={onAbrirFeeds} />
+      <AbaMobile href="/ler-mais-tarde" icone="marcador" rotulo="Salvos" ativo={pathname.startsWith("/ler-mais-tarde")} />
+      <button
+        type="button"
+        onClick={() => abrirConfiguracoes("geral")}
+        className="flex w-16 flex-col items-center gap-1 pb-2 text-[10px] font-medium text-text-muted"
+      >
+        <span className="h-[2px] w-5" />
+        <span
+          className="flex h-[21px] w-[21px] items-center justify-center rounded-full text-[10px] font-bold text-white"
+          style={estiloAvatar(dados.perfil.cor)}
+        >
+          {inicial}
+        </span>
+        Conta
+      </button>
+    </nav>
+  );
+}
+
+function AbaMobile({
+  href,
+  icone,
+  rotulo,
+  ativo,
+  onClick,
+}: {
+  href?: string;
+  icone: NomeIcone;
+  rotulo: string;
+  ativo: boolean;
+  onClick?: () => void;
+}) {
+  const conteudo = (
+    <>
+      <span className={`h-[2px] w-5 rounded-full transition-colors ${ativo ? "bg-accent" : "bg-transparent"}`} />
+      <Icon nome={icone} tamanho={21} preenchido={ativo && icone === "marcador"} />
+      <span className={ativo ? "font-bold" : "font-medium"}>{rotulo}</span>
+    </>
+  );
+  const classe = `flex w-16 flex-col items-center gap-1 pb-2 text-[10px] transition-colors ${
+    ativo ? "text-foreground" : "text-text-muted active:text-foreground"
+  }`;
+  return href ? (
+    <Link href={href} className={classe}>
+      {conteudo}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} className={classe}>
+      {conteudo}
+    </button>
   );
 }
 

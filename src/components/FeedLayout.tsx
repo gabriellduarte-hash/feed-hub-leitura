@@ -5,7 +5,7 @@ import { Icon } from "./Icon";
 
 export function Conteudo({ children, largo = false }: { children: React.ReactNode; largo?: boolean }) {
   return (
-    <div className={`mx-auto w-full px-10 pb-16 ${largo ? "max-w-[960px]" : "max-w-[900px]"}`}>
+    <div className={`mx-auto w-full px-4 pb-16 sm:px-6 lg:px-10 ${largo ? "max-w-[960px]" : "max-w-[900px]"}`}>
       {children}
     </div>
   );

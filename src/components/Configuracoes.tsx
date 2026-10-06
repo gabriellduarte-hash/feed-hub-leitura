@@ -68,18 +68,18 @@ export function Configuracoes({ email, perfil, colecoes }: { email: string; perf
   if (!secao) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal aria-label="Configurações">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center md:p-4" role="dialog" aria-modal aria-label="Configurações">
       <div className="animate-aparece absolute inset-0 bg-overlay backdrop-blur-[2px]" onClick={() => setSecao(null)} />
-      <div className="animate-menu-in relative flex h-[min(700px,92vh)] w-full max-w-[960px] overflow-hidden rounded-lg border border-border bg-surface shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]">
-        <nav className="flex w-[240px] flex-shrink-0 flex-col gap-0.5 border-r border-border bg-sidebar p-3">
-          <div className="px-3 pt-2 pb-4 text-[17px] font-bold tracking-tight text-foreground">Configurações</div>
+      <div className="animate-menu-in relative flex h-full w-full max-w-[960px] flex-col overflow-hidden bg-surface md:h-[min(700px,92vh)] md:flex-row md:rounded-lg md:border md:border-border shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]">
+        <nav className="flex flex-shrink-0 gap-0.5 overflow-x-auto border-b border-border bg-sidebar p-2 pr-14 md:w-[240px] md:flex-col md:overflow-visible md:border-r md:border-b-0 md:p-3">
+          <div className="hidden px-3 pt-2 pb-4 text-[17px] font-bold tracking-tight text-foreground md:block">Configurações</div>
           {SECOES.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => setSecao(s.id)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[14px] transition-colors ${
-                secao === s.id ? "bg-accent-soft font-semibold text-accent" : "text-text-secondary hover:bg-surface-hover hover:text-foreground"
+              className={`flex flex-shrink-0 items-center gap-2 rounded-md px-3 py-2 text-left text-[13px] whitespace-nowrap transition-colors md:gap-3 md:py-2.5 md:text-[14px] ${
+                secao === s.id ? "bg-surface-active font-semibold text-foreground" : "text-text-secondary hover:bg-surface-hover hover:text-foreground"
               }`}
             >
               <Icon nome={s.icone} tamanho={18} />
@@ -88,12 +88,12 @@ export function Configuracoes({ email, perfil, colecoes }: { email: string; perf
           ))}
         </nav>
 
-        <div className="relative flex-grow overflow-y-auto px-10 py-9">
+        <div className="flex-grow overflow-y-auto px-5 py-7 md:px-10 md:py-9">
           <button
             type="button"
             onClick={() => setSecao(null)}
             aria-label="Fechar"
-            className="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-hover hover:text-foreground"
+            className="absolute top-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-md bg-sidebar text-text-muted transition hover:bg-surface-hover hover:text-foreground md:top-5 md:right-5 md:bg-surface"
           >
             <Icon nome="fechar" />
           </button>
@@ -319,7 +319,7 @@ function SecaoPerfil({ email, perfil }: { email: string; perfil: Perfil }) {
           </div>
         </div>
       </Grupo>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
           <span className="text-[13px] font-semibold text-foreground">Nome</span>
           <input value={nome} onChange={(e) => setNome(e.target.value)} className={campo} maxLength={60} />

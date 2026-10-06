@@ -12,12 +12,12 @@ export function PageHeader({
   acoes?: React.ReactNode;
 }) {
   return (
-    <header className="flex items-start justify-between gap-6 pt-10 pb-8">
+    <header className="flex items-start justify-between gap-4 pt-6 pb-6 md:gap-6 md:pt-10 md:pb-8">
       <div className="flex min-w-0 flex-col">
         {sobretitulo && (
           <div className="mb-1.5 text-[11px] font-semibold tracking-[0.14em] text-accent uppercase">{sobretitulo}</div>
         )}
-        <h1 className="truncate text-[28px] leading-tight font-extrabold tracking-tight text-foreground">{titulo}</h1>
+        <h1 className="truncate text-[24px] leading-tight font-extrabold tracking-tight text-foreground md:text-[28px]">{titulo}</h1>
         {subtitulo && <div className="mt-2 text-[13px] font-light text-text-secondary">{subtitulo}</div>}
       </div>
       {acoes && <div className="flex flex-shrink-0 items-center gap-1 pt-1.5">{acoes}</div>}
@@ -33,7 +33,7 @@ export function Tabs({
   ativa: string;
 }) {
   return (
-    <nav className="-mt-2 mb-10 flex gap-7 border-b border-border">
+    <nav className="-mt-2 mb-8 flex gap-7 overflow-x-auto border-b border-border md:mb-10">
       {abas.map((aba) => (
         <Link
           key={aba.chave}

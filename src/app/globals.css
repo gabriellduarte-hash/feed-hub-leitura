@@ -163,6 +163,16 @@ body {
   animation: leitor-sai 180ms ease-in forwards;
 }
 
+@keyframes gaveta-entra {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-gaveta {
+  animation: gaveta-entra 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .animate-aparece {
   animation: aparece 250ms ease-out;
 }

@@ -233,8 +233,8 @@ export function ArticleList({
 
 function LinhaEsqueleto() {
   return (
-    <div className="flex animate-pulse gap-5 py-[var(--linha-py)]">
-      <div className="aspect-[16/10] w-[var(--capa-largura)] flex-shrink-0 bg-surface-active" />
+    <div className="flex animate-pulse gap-4 py-[var(--linha-py)] sm:gap-5">
+      <div className="aspect-[16/10] w-[104px] flex-shrink-0 bg-surface-active sm:w-[var(--capa-largura)]" />
       <div className="flex flex-grow flex-col gap-2.5 pt-1">
         <div className="h-3.5 w-4/5 rounded bg-surface-active" />
         <div className="h-3 w-2/5 rounded bg-surface-active" />
@@ -269,7 +269,7 @@ function LinhaArtigo({
       ref={registrar}
       onClick={onAbrir}
       style={{ animationDelay: `${atraso}ms` }}
-      className={`animate-fade-up group relative -mx-3 flex cursor-pointer gap-5 rounded-md px-3 py-[var(--linha-py)] transition-colors duration-150 hover:bg-surface-hover/60 ${
+      className={`animate-fade-up group relative -mx-3 flex cursor-pointer gap-4 rounded-md px-3 py-[var(--linha-py)] sm:gap-5 transition-colors duration-150 hover:bg-surface-hover/60 ${
         ativo ? "bg-surface-hover/60" : ""
       }`}
     >
@@ -281,7 +281,7 @@ function LinhaArtigo({
         }`}
       />
 
-      <div className="relative aspect-[16/10] w-[var(--capa-largura)] flex-shrink-0 self-start overflow-hidden bg-surface-active">
+      <div className="relative aspect-[16/10] w-[104px] flex-shrink-0 self-start overflow-hidden bg-surface-active sm:w-[var(--capa-largura)]">
         {artigo.image_url ? (
           // <img> simples: as URLs vêm de feeds arbitrários, e liberar
           // qualquer domínio no next/image vira um proxy de imagem aberto
@@ -302,10 +302,10 @@ function LinhaArtigo({
         )}
       </div>
 
-      <div className="flex min-w-0 flex-grow flex-col gap-1.5 pt-0.5 pr-20">
+      <div className="flex min-w-0 flex-grow flex-col gap-1.5 pt-0.5 sm:pr-20">
         <Meta artigo={artigo} salvo={estado.salvo} />
         <h3
-          className={`text-[15px] leading-[1.4] tracking-tight transition-colors duration-150 group-hover:text-foreground ${
+          className={`text-[14px] leading-[1.4] sm:text-[15px] tracking-tight transition-colors duration-150 group-hover:text-foreground ${
             estado.lido ? "font-normal text-text-muted" : "font-bold text-foreground"
           }`}
         >
@@ -317,7 +317,7 @@ function LinhaArtigo({
       </div>
 
       {artigo.origem === "usuario" && (
-        <div className="absolute top-3 right-3 flex translate-x-1 items-center gap-0.5 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100 focus-within:opacity-100">
+        <div className="absolute top-3 right-3 hidden translate-x-1 items-center gap-0.5 opacity-0 sm:flex transition duration-150 group-hover:translate-x-0 group-hover:opacity-100 focus-within:opacity-100">
           <BotaoAcao
             rotulo={estado.salvo ? "Remover de Ler mais tarde" : "Ler mais tarde"}
             ativo={estado.salvo}

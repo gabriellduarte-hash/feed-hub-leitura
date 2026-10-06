@@ -29,9 +29,9 @@ export function AdicionarFonteForm({ topicId }: { topicId: string }) {
 
   return (
     <form action={enviar} className="mt-2 flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <input name="url" required placeholder="Endereço do site ou do feed" className={`${campo} flex-grow`} />
-        <input name="nome" placeholder="Nome (opcional)" className={`${campo} w-40`} />
+        <input name="nome" placeholder="Nome (opcional)" className={`${campo} w-full sm:w-40`} />
         <button
           type="submit"
           disabled={pendente}
