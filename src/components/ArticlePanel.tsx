@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { ArtigoLista } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
+import { limparTexto } from "@/lib/limpar-texto";
 import { ResumoFormatado } from "@/lib/resumo";
 import { Icon, type NomeIcone } from "./Icon";
 import { ItemMenu, Menu } from "./Menu";
@@ -80,7 +81,7 @@ export function ArticlePanel({
     mostrarToast("Link copiado");
   }
 
-  const blocos = formatar(a.content ?? "");
+  const blocos = formatar(limparTexto(a.content));
   const temTexto = blocos.length > 0 && a.content !== a.ai_summary;
 
   return (

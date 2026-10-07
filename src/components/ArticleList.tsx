@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { agruparPorDia, type ArtigoLista, type FiltroPagina, type Secao } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
+import { limparTexto } from "@/lib/limpar-texto";
 import { textoPuro } from "@/lib/resumo";
 import { definirLido, definirSalvo } from "@/app/actions/artigos";
 import { carregarMaisArtigos } from "@/app/actions/paginacao";
@@ -258,7 +259,7 @@ function LinhaArtigo({
   onAlterar: (m: Partial<Estado>) => void;
 }) {
   // prévia sem as marcações do resumo formatado (**negrito**, "> citação")
-  const previa = textoPuro(artigo.ai_summary ?? artigo.content);
+  const previa = textoPuro(artigo.ai_summary ?? limparTexto(artigo.content));
 
   return (
     <article

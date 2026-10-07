@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { decodificarEntidades, htmlParaTexto, limparTexto, MAX_CARACTERES } from "./limpar-texto";
 
 /** Mesmo User-Agent do coletor em Python (coletor/coletar.py). */
 export const USER_AGENT = "FeedNoticiasBot/0.1 (uso pessoal - estudo)";
@@ -75,22 +76,21 @@ export async function buscar(endereco: string): Promise<{ url: string; tipo: str
 /* Texto                                                                   */
 /* ----------------------------------------------------------------------- */
 
-const ENTIDADES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
-
 export function limparHtml(valor: unknown, limite?: number): string {
-  let texto = textoDe(valor)
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (inteiro, codigo: string) => {
-      if (codigo[0] === "#") {
-        const n = codigo[1].toLowerCase() === "x" ? parseInt(codigo.slice(2), 16) : parseInt(codigo.slice(1), 10);
-        return Number.isFinite(n) ? String.fromCodePoint(n) : inteiro;
-      }
-      return ENTIDADES[codigo.toLowerCase()] ?? inteiro;
-    })
+  let texto = decodificarEntidades(textoDe(valor).replace(/<[^>]+>/g, " "))
     .replace(/\s+/g, " ")
     .trim();
   if (limite && texto.length > limite) texto = texto.slice(0, limite);
   return texto;
+}
+
+/** O texto mais completo que o feed manda, limpo e com os parágrafos.
+ * Muitos feeds (WordPress) põem a matéria inteira no content:encoded e
+ * só uma frase no description; outros (G1) põem tudo no description. */
+function textoDaNoticia(...candidatos: unknown[]): string | null {
+  const textos = candidatos.map((c) => limparTexto(htmlParaTexto(textoDe(c))));
+  const melhor = textos.reduce((a, b) => (b.length > a.length ? b : a), "");
+  return melhor.slice(0, MAX_CARACTERES) || null;
 }
 
 function textoDe(valor: unknown): string {
@@ -182,7 +182,7 @@ export function lerXml(texto: string): FeedLido | null {
       noticias: itens.map((i) => ({
         title: limparHtml(i.title) || "(sem título)",
         url: textoDe(i.link).trim() || textoDe(i.guid).trim(),
-        content: limparHtml(i["content:encoded"] ?? i.description, 4000) || null,
+        content: textoDaNoticia(i["content:encoded"], i.description),
         published_at: data(i.pubDate ?? i["dc:date"]),
         author: limparHtml(i["dc:creator"] ?? i.author) || null,
         image_url: primeiraImagem(i),
@@ -201,7 +201,7 @@ export function lerXml(texto: string): FeedLido | null {
       noticias: itens.map((i) => ({
         title: limparHtml(i.title) || "(sem título)",
         url: linkAtom(i),
-        content: limparHtml(i.summary ?? i.content, 4000) || null,
+        content: textoDaNoticia(i.content, i.summary),
         published_at: data(i.published ?? i.updated),
         author: limparHtml((i.author as No | undefined)?.name) || null,
         image_url: primeiraImagem(i),
