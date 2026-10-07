@@ -2,13 +2,23 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { Sidebar, type DadosSidebar } from "./Sidebar";
 import { abrirConfiguracoes, Configuracoes, estiloAvatar } from "./Configuracoes";
 import { Toaster } from "./Toast";
+
+// Coleções, fontes e perfil, pra páginas que mostram a mesma coisa que o
+// menu lateral (no celular, a página Feeds) sem buscar tudo de novo
+const DadosApp = createContext<DadosSidebar | null>(null);
+
+export function useDadosApp() {
+  const dados = useContext(DadosApp);
+  if (!dados) throw new Error("useDadosApp fora do AppShell");
+  return dados;
+}
 
 export function AppShell({ dados, children }: { dados: DadosSidebar; children: React.ReactNode }) {
   const [valorRecolhido, setValorRecolhido] = useLocalStorage("sidebar-recolhida", "0");
@@ -30,9 +40,8 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
     setValorRecolhido(recolhido ? "0" : "1");
   }
 
-  const [gavetaAberta, setGavetaAberta] = useState(false);
-
   return (
+    <DadosApp.Provider value={dados}>
     <div
       className="flex h-[100dvh] bg-background"
       // O leitor de artigos centraliza no espaço à direita do menu: ele lê
@@ -47,32 +56,8 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
       <div className="flex min-w-0 flex-grow flex-col">
         <BarraTopoMobile />
         <main className="relative min-w-0 flex-grow overflow-y-auto">{children}</main>
-        <BarraAbasMobile dados={dados} onAbrirFeeds={() => setGavetaAberta(true)} />
+        <BarraAbasMobile dados={dados} />
       </div>
-
-      {/* celular: o mesmo menu, como gaveta que desliza da esquerda */}
-      {gavetaAberta && (
-        <div className="fixed inset-0 z-[55] md:hidden">
-          <div className="animate-aparece absolute inset-0 bg-overlay" onClick={() => setGavetaAberta(false)} />
-          <div
-            className="animate-gaveta absolute inset-y-0 left-0 flex shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]"
-            // tocar num link (fonte, coleção, página) fecha a gaveta
-            onClickCapture={(e) => {
-              if ((e.target as HTMLElement).closest("a")) setGavetaAberta(false);
-            }}
-          >
-            <Sidebar
-              dados={dados}
-              recolhido={false}
-              onAlternar={() => setGavetaAberta(false)}
-              onIrPara={() => {
-                setGavetaAberta(false);
-                setIrParaAberto(true);
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {irParaAberto && <IrPara dados={dados} onFechar={() => setIrParaAberto(false)} />}
       <Configuracoes
@@ -82,6 +67,7 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
       />
       <Toaster />
     </div>
+    </DadosApp.Provider>
   );
 }
 
@@ -107,14 +93,31 @@ function BarraTopoMobile() {
   );
 }
 
-function BarraAbasMobile({ dados, onAbrirFeeds }: { dados: DadosSidebar; onAbrirFeeds: () => void }) {
+/* Abas do celular: Feeds (coleções e fontes) na ponta esquerda, o Feed
+ * (início, com a logo) no meio. */
+function BarraAbasMobile({ dados }: { dados: DadosSidebar }) {
   const pathname = usePathname();
   const inicial = (dados.perfil.nome || dados.email).charAt(0).toUpperCase();
+  const noFeed = pathname === "/";
   return (
     <nav className="flex flex-shrink-0 items-stretch justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
-      <AbaMobile href="/" icone="casa" rotulo="Início" ativo={pathname === "/"} />
+      <AbaMobile href="/feeds" icone="camadas" rotulo="Feeds" ativo={pathname.startsWith("/feeds") || pathname === "/fontes"} />
       <AbaMobile href="/buscar" icone="buscar" rotulo="Buscar" ativo={pathname.startsWith("/buscar")} />
-      <AbaMobile icone="camadas" rotulo="Feeds" ativo={pathname.startsWith("/feeds")} onClick={onAbrirFeeds} />
+      <Link
+        href="/"
+        aria-current={noFeed ? "page" : undefined}
+        className={`flex w-16 flex-col items-center gap-1 pb-2 text-[10px] ${noFeed ? "font-bold text-foreground" : "font-medium text-text-muted"}`}
+      >
+        <span className={`h-[2px] w-5 rounded-full ${noFeed ? "bg-accent" : "bg-transparent"}`} />
+        <span
+          className={`flex h-[21px] w-[21px] items-center justify-center rounded-md transition-colors ${
+            noFeed ? "bg-accent text-white" : "bg-foreground text-background"
+          }`}
+        >
+          <Icon nome="rss" tamanho={12} espessura={2.6} />
+        </span>
+        Feed
+      </Link>
       <AbaMobile href="/ler-mais-tarde" icone="marcador" rotulo="Salvos" ativo={pathname.startsWith("/ler-mais-tarde")} />
       <button
         type="button"
@@ -134,19 +137,7 @@ function BarraAbasMobile({ dados, onAbrirFeeds }: { dados: DadosSidebar; onAbrir
   );
 }
 
-function AbaMobile({
-  href,
-  icone,
-  rotulo,
-  ativo,
-  onClick,
-}: {
-  href?: string;
-  icone: NomeIcone;
-  rotulo: string;
-  ativo: boolean;
-  onClick?: () => void;
-}) {
+function AbaMobile({ href, icone, rotulo, ativo }: { href: string; icone: NomeIcone; rotulo: string; ativo: boolean }) {
   const conteudo = (
     <>
       <span className={`h-[2px] w-5 rounded-full transition-colors ${ativo ? "bg-accent" : "bg-transparent"}`} />
@@ -157,14 +148,10 @@ function AbaMobile({
   const classe = `flex w-16 flex-col items-center gap-1 pb-2 text-[10px] transition-colors ${
     ativo ? "text-foreground" : "text-text-muted active:text-foreground"
   }`;
-  return href ? (
-    <Link href={href} className={classe}>
+  return (
+    <Link href={href} aria-current={ativo ? "page" : undefined} className={classe}>
       {conteudo}
     </Link>
-  ) : (
-    <button type="button" onClick={onClick} className={classe}>
-      {conteudo}
-    </button>
   );
 }
 
