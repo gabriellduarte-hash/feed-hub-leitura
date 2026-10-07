@@ -255,9 +255,10 @@ async function buscarNoticiasDoCatalogo(
   });
 }
 
-/** Categorias que têm fonte no catálogo (os filtros da aba Explorar). */
+/** Categorias que têm fonte na vitrine do catálogo (os filtros da aba
+ * Explorar do Início: só as da vitrine são coletadas, sql/031). */
 export async function categoriasDoCatalogo(supabase: SupabaseClient) {
-  const { data } = await supabase.from("feed_catalog").select("category");
+  const { data } = await supabase.from("feed_catalog").select("category").eq("vitrine", true);
   const presentes = new Set((data ?? []).map((c) => c.category as string));
   return CATEGORIAS.filter((c) => presentes.has(c));
 }
@@ -272,9 +273,12 @@ export function agruparPorDia(artigos: ArtigoLista[]): Secao[] {
   return [...grupos.entries()].map(([titulo, artigos]) => ({ titulo, artigos }));
 }
 
-const CATEGORIAS = [
-  "Tecnologia", "Finanças", "Humor", "Política", "Ciência",
-  "Saúde", "Esportes", "Entretenimento", "Mundo", "Outros",
+// Mesma lista do catálogo (catalogo/catalogar.py): as categorias que a IA
+// dá pra cada notícia, mais três só do catálogo pra organizar a
+// descoberta ("Notícias", "Meio ambiente", "Automóveis")
+export const CATEGORIAS = [
+  "Notícias", "Política", "Finanças", "Tecnologia", "Ciência", "Meio ambiente",
+  "Saúde", "Esportes", "Entretenimento", "Automóveis", "Mundo", "Humor", "Outros",
 ];
 
 export type Sugestao = { id: string; nome: string; host: string; descricao: string | null; categoria: string };

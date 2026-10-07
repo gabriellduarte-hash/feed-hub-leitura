@@ -143,16 +143,18 @@ export async function detectarFonte(
     }
   }
 
-  // 4) sitemap de notícias (filtrando a seção, se o link apontou pra uma)
-  const caminho = url.pathname.replace(/\/+$/, "");
-  for (const sitemap of await sitemapsDeNoticia(url)) {
+  // 4) sitemap de notícias (filtrando a seção, se o link apontou pra uma;
+  // se o link era de um feed que não abriu, vale o site inteiro)
+  const alvo = /(^|\/)(feeds?|rss|atom)(\/|$)|\.(xml|rss|atom|cms)$/i.test(url.pathname) ? new URL(url.origin) : url;
+  const caminho = alvo.pathname.replace(/\/+$/, "");
+  for (const sitemap of await sitemapsDeNoticia(alvo)) {
     const endereco = sitemap + (caminho ? `#caminho=${caminho}` : "");
     const noticias = await lerSitemap(endereco).catch(() => []);
     if (noticias.length > 0) return { fonte: { url: endereco, tipo: "sitemap", nome: nomeSite, via: "sitemap" } };
   }
 
   // 5) Google Notícias
-  const google = urlGoogleNews(url.toString());
+  const google = urlGoogleNews(alvo.toString());
   const feed = await feedValido(google);
   if (feed) return { fonte: { url: google, tipo: "rss", nome: nomeSite, via: "google-news" } };
 

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { adicionarFonte, type ResultadoAdicionar } from "@/app/actions/adicionar-fonte";
+import { buscarFontesNaWeb, type FonteNaWeb } from "@/app/actions/buscar-fontes";
+import { faviconDe } from "@/lib/fonte";
 import { Icon } from "@/components/Icon";
 import { ItemMenu, Menu, SeparadorMenu } from "@/components/Menu";
 import { mostrarToast } from "@/components/Toast";
@@ -15,16 +17,20 @@ export function resumoDaAdicao(r: ResultadoAdicionar) {
   return total > 0 ? `${total} notícias já estão no seu feed.` : "As primeiras notícias chegam em breve.";
 }
 
+/** Seguir uma fonte do catálogo (catalogoId) ou achada na web (url).
+ * Sem categoria (as da web), "Nova coleção" pergunta o nome. */
 export function BotaoSeguir({
   catalogoId,
+  url,
   nome,
   categoria,
   colecoes,
   colecaoPreferida,
 }: {
-  catalogoId: string;
+  catalogoId?: string;
+  url?: string;
   nome: string;
-  categoria: string;
+  categoria?: string;
   colecoes: Colecao[];
   colecaoPreferida?: Colecao;
 }) {
@@ -32,42 +38,53 @@ export function BotaoSeguir({
   const [seguindo, setSeguindo] = useState(false);
 
   function seguir(colecao: Colecao | null) {
+    const novaColecao = colecao ? undefined : (categoria ?? window.prompt("Nome da nova coleção")?.trim());
+    if (!colecao && !novaColecao) return;
     setSeguindo(true);
     startTransition(async () => {
-      const r = await adicionarFonte({ catalogoId, topicId: colecao?.id, novaColecao: categoria });
+      const r = await adicionarFonte({ catalogoId, url, topicId: colecao?.id, novaColecao });
       if (r.erro) {
         setSeguindo(false);
         mostrarToast(r.erro);
       } else {
-        mostrarToast(`Seguindo ${nome} em ${colecao?.nome ?? categoria}. ${resumoDaAdicao(r)}`);
+        mostrarToast(`Seguindo ${nome} em ${colecao?.nome ?? novaColecao}. ${resumoDaAdicao(r)}`);
       }
     });
   }
 
   const classe =
-    "flex h-8 items-center gap-1.5 rounded-md bg-foreground px-3.5 text-sm font-semibold text-background transition-colors hover:bg-accent active:scale-95 disabled:opacity-60";
+    "flex h-9 w-9 items-center justify-center gap-1.5 rounded-full bg-foreground text-sm font-semibold text-background transition-colors hover:bg-accent active:scale-95 disabled:opacity-60 sm:h-8 sm:w-auto sm:rounded-md sm:px-3.5";
+  const rotulo = (
+    <>
+      <Icon nome="adicionar" tamanho={16} espessura={2.2} className="sm:hidden" />
+      <span className="hidden sm:inline">Seguir</span>
+    </>
+  );
 
   if (seguindo) {
     return (
-      <span className="animate-fade-up flex h-8 items-center gap-1.5 rounded-md border border-border px-3 text-sm text-text-secondary">
-        <Icon nome="check" tamanho={15} />
-        {pendente ? "Carregando notícias…" : "Seguindo"}
+      <span
+        title={pendente ? "Carregando notícias…" : "Seguindo"}
+        className="animate-fade-up flex h-9 w-9 items-center justify-center gap-1.5 rounded-full border border-border text-sm text-text-secondary sm:h-8 sm:w-auto sm:rounded-md sm:px-3"
+      >
+        <Icon nome="check" tamanho={15} className={pendente ? "animate-pulse" : ""} />
+        <span className="hidden sm:inline">{pendente ? "Carregando notícias…" : "Seguindo"}</span>
       </span>
     );
   }
 
   if (colecaoPreferida) {
     return (
-      <button type="button" onClick={() => seguir(colecaoPreferida)} className={classe}>
-        Seguir
+      <button type="button" onClick={() => seguir(colecaoPreferida)} aria-label={`Seguir ${nome}`} className={classe}>
+        {rotulo}
       </button>
     );
   }
 
-  const temColecaoDaCategoria = colecoes.some((c) => c.nome === categoria);
+  const temColecaoDaCategoria = !!categoria && colecoes.some((c) => c.nome === categoria);
 
   return (
-    <Menu alinhar="direita" gatilho="Seguir" classeGatilho={classe} rotulo={`Seguir ${nome}`}>
+    <Menu alinhar="direita" gatilho={rotulo} classeGatilho={classe} rotulo={`Seguir ${nome}`}>
       {() => (
         <>
           <div className="px-3 pt-1.5 pb-1 text-[11px] text-text-muted">Adicionar à coleção</div>
@@ -80,7 +97,7 @@ export function BotaoSeguir({
             <>
               {colecoes.length > 0 && <SeparadorMenu />}
               <ItemMenu icone="adicionar" onClick={() => seguir(null)}>
-                Nova coleção &quot;{categoria}&quot;
+                {categoria ? <>Nova coleção &quot;{categoria}&quot;</> : "Nova coleção…"}
               </ItemMenu>
             </>
           )}
@@ -175,5 +192,83 @@ export function SeguirPorUrlForm({ colecoes, colecaoPreferida }: { colecoes: Col
         </div>
       )}
     </form>
+  );
+}
+
+/** "Na web": o veículo procurado pelo nome, quando não está no catálogo
+ * (ou pra achar outros com nome parecido). Carrega depois da lista do
+ * catálogo, porque abre os sites de verdade. */
+export function BuscaNaWeb({
+  termo,
+  colecoes,
+  colecaoPreferida,
+}: {
+  termo: string;
+  colecoes: Colecao[];
+  colecaoPreferida?: Colecao;
+}) {
+  const [resultado, setResultado] = useState<{ termo: string; fontes: FonteNaWeb[] } | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    buscarFontesNaWeb(termo)
+      .then((fontes) => ativo && setResultado({ termo, fontes }))
+      .catch(() => ativo && setResultado({ termo, fontes: [] }));
+    return () => {
+      ativo = false;
+    };
+  }, [termo]);
+
+  const carregando = resultado?.termo !== termo;
+  if (!carregando && resultado.fontes.length === 0) return null;
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-2 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">Na web</h2>
+      {carregando ? (
+        <p className="animate-pulse py-4 text-[13px] text-text-muted">Procurando &quot;{termo}&quot; na web…</p>
+      ) : (
+        resultado.fontes.map((f) => (
+          <LinhaFonte key={f.url} nome={f.nome} host={f.host}>
+            <BotaoSeguir url={f.url} nome={f.nome} colecoes={colecoes} colecaoPreferida={colecaoPreferida} />
+          </LinhaFonte>
+        ))
+      )}
+    </section>
+  );
+}
+
+/** Uma fonte na lista do "Seguir fontes": ícone, nome, site e o botão. */
+export function LinhaFonte({
+  nome,
+  host,
+  detalhe,
+  descricao,
+  children,
+}: {
+  nome: string;
+  host: string;
+  detalhe?: string;
+  descricao?: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="animate-fade-up -mx-2 flex items-center gap-4 rounded-lg px-2 py-3 transition-colors hover:bg-surface-hover/60">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={faviconDe(host)}
+        alt=""
+        className="aspect-square h-12 w-12 flex-shrink-0 rounded-md bg-surface p-2 ring-1 ring-border"
+      />
+      <div className="flex min-w-0 flex-grow flex-col gap-0.5">
+        <div className="truncate text-[15px] font-semibold text-foreground">{nome}</div>
+        <div className="truncate text-[13px] text-text-muted">
+          {host}
+          {detalhe && ` · ${detalhe}`}
+        </div>
+        {descricao && <div className="hidden truncate text-[13px] text-text-secondary sm:block">{descricao}</div>}
+      </div>
+      {children}
+    </div>
   );
 }

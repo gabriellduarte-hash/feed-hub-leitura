@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { detectarFonte, type FonteDetectada } from "@/lib/descobrir-fonte";
-import { coletarFonte } from "@/lib/leitor-feeds";
+import { coletarFonte, type Noticia } from "@/lib/leitor-feeds";
 import { nomeDaFonte } from "@/lib/fonte";
 import { dispararColetaDaFonte } from "@/lib/github";
 
@@ -34,11 +34,25 @@ async function resolverColecao(supabase: Supabase, userId: string, topicId: stri
   return error ? null : (nova.id as string);
 }
 
+// Ao seguir, só as notícias das últimas 24h (o catálogo é um mapa: a fonte
+// não tinha nada coletado). Sem nenhuma (fonte que publica pouco), as
+// mais recentes, pra não aparecer vazia. Igual ao coletor (coletar.py).
+const HORAS_AO_SEGUIR = 24;
+const RESERVA_AO_SEGUIR = 5;
+
+function soRecentes(noticias: Noticia[]): Noticia[] {
+  const limite = Date.now() - HORAS_AO_SEGUIR * 3600_000;
+  const quando = (n: Noticia) => (n.published_at ? Date.parse(n.published_at) : NaN);
+  const recentes = noticias.filter((n) => !(quando(n) < limite)); // sem data: não dá pra saber, fica
+  if (recentes.length > 0) return recentes;
+  return [...noticias].sort((a, b) => (quando(b) || 0) - (quando(a) || 0)).slice(0, RESERVA_AO_SEGUIR);
+}
+
 /** Adicionar fonte, por qualquer caminho (catálogo, "por URL", Organizar):
  * 1. entende o link (RSS? site com RSS escondido? sitemap? Google Notícias?);
  * 2. não deixa seguir duas vezes a mesma fonte;
- * 3. aproveita as notícias que já estão no banco (sql/023);
- * 4. coleta na hora, pra fonte já aparecer com notícias. */
+ * 3. aproveita as notícias das últimas 24h que já estão no banco (sql/023 e 031);
+ * 4. coleta na hora as das últimas 24h, pra fonte já aparecer com notícias. */
 export async function adicionarFonte(pedido: {
   url?: string;
   catalogoId?: string;
@@ -113,7 +127,7 @@ export async function adicionarFonte(pedido: {
   // jeito: o coletor diário tenta de novo (e cai no Google Notícias).
   let coletadas = 0;
   try {
-    const noticias = await coletarFonte(fonte.url, fonte.tipo);
+    const noticias = soRecentes(await coletarFonte(fonte.url, fonte.tipo));
     if (noticias.length > 0) {
       const { data: inseridas } = await supabase
         .from("articles")
