@@ -12,7 +12,7 @@ import { Icon } from "./Icon";
 
 const VALORES = [5, 10, 20];
 
-export function ApoiarProjeto({ titulo = "Gostou do Feed de Notícias?" }: { titulo?: string }) {
+export function ApoiarProjeto({ titulo = "Gostou do Daily Paper?" }: { titulo?: string }) {
   const conta = contaPixConfigurada();
   const [valor, setValor] = useState<number | "outro">(10);
   const [outro, setOutro] = useState("");

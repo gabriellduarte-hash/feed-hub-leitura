@@ -110,7 +110,7 @@ export function Configuracoes({ email, perfil, colecoes }: { email: string; perf
             {secao === "resumo" && <SecaoResumo email={email} colecoes={colecoes} />}
             {secao === "atalhos" && <SecaoAtalhos />}
             {secao === "feedback" && <SecaoFeedback />}
-            {secao === "apoiar" && <ApoiarProjeto titulo="Apoie o Feed de Notícias" />}
+            {secao === "apoiar" && <ApoiarProjeto titulo="Apoie o Daily Paper" />}
           </div>
         </div>
       </div>
@@ -232,7 +232,7 @@ function SecaoAparencia() {
           onChange={(tema) => alterar({ tema })}
           opcoes={[
             { valor: "claro", rotulo: "Claro" },
-            { valor: "escuro", rotulo: "Escuro" },
+            { valor: "escuro", rotulo: "Escuro", detalhe: "padrão" },
             { valor: "sistema", rotulo: "Automático", detalhe: "igual ao do aparelho" },
           ]}
         />

@@ -1,9 +1,10 @@
 import { ApoiarProjeto } from "@/components/ApoiarProjeto";
 import { Icon, type NomeIcone } from "@/components/Icon";
+import { Logo } from "@/components/Logo";
 import { BotaoEntrar, PainelEntrar } from "@/components/PainelEntrar";
 
-/* Página de entrada (quem não entrou cai aqui): o que é o Feed de
- * Notícias, como funciona, perguntas frequentes e o apoio ao projeto.
+/* Página de entrada (quem não entrou cai aqui): o que é o Daily Paper,
+ * como funciona, perguntas frequentes e o apoio ao projeto.
  * Entrar e criar conta abrem numa janela, pelo topo ou pelos botões. */
 
 const AVISOS: Record<string, { texto: string; modo: "entrar" | "esqueci" }> = {
@@ -29,7 +30,7 @@ const RECURSOS: { icone: NomeIcone; titulo: string; texto: string }[] = [
 
 const PERGUNTAS: { pergunta: string; resposta: string }[] = [
   { pergunta: "É grátis?", resposta: "Sim. O projeto é independente, não tem anúncios e se mantém com o apoio de quem usa." },
-  { pergunta: "Preciso saber o que é RSS?", resposta: "Não. Escolha as fontes na lista ou cole o endereço de um site; o Feed de Notícias descobre sozinho como ler as notícias dele." },
+  { pergunta: "Preciso saber o que é RSS?", resposta: "Não. Escolha as fontes na lista ou cole o endereço de um site; o Daily Paper descobre sozinho como ler as notícias dele." },
   { pergunta: "O resumo substitui a matéria?", resposta: "Não. Ele ajuda a decidir o que ler. O texto completo e o link para o site original estão sempre ali." },
   { pergunta: "O que vocês guardam sobre mim?", resposta: "Só o necessário: seu e-mail, as fontes que você segue e suas preferências. Você pode excluir a conta quando quiser, em Configurações." },
 ];
@@ -42,11 +43,8 @@ export default async function EntradaPage(props: PageProps<"/login">) {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[1080px] items-center justify-between gap-4 px-4 sm:px-6">
-          <a href="#topo" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-background">
-              <Icon nome="rss" tamanho={16} espessura={2.2} />
-            </span>
-            <span className="text-[14px] font-extrabold tracking-tight whitespace-nowrap">Feed de Notícias</span>
+          <a href="#topo" aria-label="Daily Paper, início da página">
+            <Logo className="text-[17px]" />
           </a>
           <nav className="flex items-center gap-1 sm:gap-2">
             <a href="#como-funciona" className="hidden rounded-md px-3 py-2 text-[13px] text-text-secondary transition-colors hover:text-foreground md:block">
@@ -83,7 +81,7 @@ export default async function EntradaPage(props: PageProps<"/login">) {
               Suas notícias, resumidas e num só lugar.
             </h1>
             <p className="max-w-[520px] text-[15px] leading-relaxed text-text-secondary">
-              Siga os sites que você lê, do Brasil e de fora. O Feed de Notícias junta tudo, tira os anúncios e resume cada
+              Siga os sites que você lê, do Brasil e de fora. O Daily Paper junta tudo, tira os anúncios e resume cada
               matéria em português. Uma vez por dia, o mais recente chega no seu e-mail.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -164,7 +162,7 @@ export default async function EntradaPage(props: PageProps<"/login">) {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-[1080px] flex-col items-center justify-between gap-3 px-4 py-8 text-[12px] text-text-muted sm:flex-row sm:px-6">
-          <span>Feed de Notícias · projeto independente, sem anúncios</span>
+          <span>Daily Paper · projeto independente, sem anúncios</span>
           <BotaoEntrar modo="entrar" className="font-semibold text-foreground hover:text-accent">
             Entrar
           </BotaoEntrar>

@@ -11,6 +11,7 @@ import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { ItemMenu, Menu, SeparadorMenu } from "./Menu";
 import { ItensMenuColecao, ItensMenuFonte } from "./MenusFonte";
+import { Logo, LogoReduzida } from "./Logo";
 import { abrirConfiguracoes, estiloAvatar } from "./Configuracoes";
 import { mostrarToast } from "./Toast";
 
@@ -81,13 +82,10 @@ export function Sidebar({
     >
       <div className={`mb-7 flex items-center ${recolhido ? "flex-col gap-3" : "justify-between"}`}>
         <Link href="/" aria-label="Início" className="flex min-w-0 items-center gap-3">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md bg-foreground text-background transition-colors duration-200 hover:bg-accent">
-            <Icon nome="rss" tamanho={20} espessura={2.2} />
-          </span>
-          {!recolhido && (
-            <span className="animate-aparece truncate text-[14px] font-extrabold tracking-tight text-foreground">
-              Feed de Notícias
-            </span>
+          {recolhido ? (
+            <LogoReduzida tamanho={40} className="transition-transform duration-200 hover:scale-105" />
+          ) : (
+            <Logo className="animate-aparece py-2 text-[17px]" />
           )}
         </Link>
         <button

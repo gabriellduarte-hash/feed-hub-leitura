@@ -13,6 +13,35 @@
 
 export const MAX_CARACTERES = 12000;
 
+// "simbÃ³lico" -> "simbólico": texto em UTF-8 que alguém leu como Latin-1
+// ou Windows-1252 (página sem a codificação no cabeçalho, como a Folha).
+// Cada trecho estragado volta a ser os bytes originais e é lido de novo
+// como UTF-8; o que não for UTF-8 válido fica como está. Mesma ideia do
+// ftfy.fix_encoding do coletor.
+const CP1252: Record<string, number> = {
+  "€": 0x80, "‚": 0x82, "ƒ": 0x83, "„": 0x84, "…": 0x85, "†": 0x86, "‡": 0x87, "ˆ": 0x88, "‰": 0x89, "Š": 0x8a,
+  "‹": 0x8b, "Œ": 0x8c, "Ž": 0x8e, "‘": 0x91, "’": 0x92, "“": 0x93, "”": 0x94, "•": 0x95, "–": 0x96, "—": 0x97,
+  "˜": 0x98, "™": 0x99, "š": 0x9a, "›": 0x9b, "œ": 0x9c, "ž": 0x9e, "Ÿ": 0x9f,
+};
+const CONTINUACAO = "[\\u0080-\\u00BF€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ]";
+const TEM_ESTRAGO = new RegExp(`[\\u00C2-\\u00F4]${CONTINUACAO}`);
+const TRECHO_ESTRAGADO = new RegExp(`[\\u00C2-\\u00F4]${CONTINUACAO}{1,3}`, "g");
+
+export function consertarAcentos(texto: string): string;
+export function consertarAcentos(texto: string | null | undefined): string | null | undefined;
+export function consertarAcentos(texto: string | null | undefined) {
+  if (!texto || !TEM_ESTRAGO.test(texto)) return texto;
+  return texto.replace(TRECHO_ESTRAGADO, (trecho) => {
+    const bytes = [...trecho].map((c) => (c.charCodeAt(0) < 256 ? c.charCodeAt(0) : CP1252[c]));
+    if (bytes.some((b) => b === undefined)) return trecho;
+    try {
+      return new TextDecoder("utf-8", { fatal: true }).decode(new Uint8Array(bytes as number[]));
+    } catch {
+      return trecho;
+    }
+  });
+}
+
 const ENTIDADES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
 
 export function decodificarEntidades(texto: string) {
@@ -82,13 +111,25 @@ export function limparTexto(texto: string | null | undefined): string {
   if (!texto) return "";
   const vistos = new Set<string>();
   const saida: string[] = [];
-  for (const linha of texto.replace(RODAPE_WORDPRESS, "").split("\n")) {
+  for (const linha of consertarAcentos(texto).replace(RODAPE_WORDPRESS, "").split("\n")) {
     const p = linha.replace(/\s+/g, " ").trim();
     if (!p || vistos.has(p) || ehLixo(p)) continue;
     vistos.add(p);
     saida.push(p);
   }
   return saida.join("\n");
+}
+
+// Pelo Google Notícias, a busca "site:" também traz páginas que não são
+// notícia: listagens ("... - Página 1246"), páginas de pessoa ou de filme
+// ("Milo Quifes") e de streaming ("Ver X online"). Mesma regra do coletor
+// (alternativas.eh_noticia_do_google_news).
+export function ehNoticiaDoGoogleNews(titulo: string) {
+  return !(
+    /(^|\s)(p[áa]gina|page)\s+\d+/i.test(titulo) ||
+    /^(ver|assistir)\b.*\bonline$/i.test(titulo) ||
+    titulo.trim().split(/\s+/).length < 4
+  );
 }
 
 // Tags que nunca são texto da matéria (somem com o que tem dentro)

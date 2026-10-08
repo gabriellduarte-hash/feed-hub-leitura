@@ -6,7 +6,7 @@ import { registrarPrimeiroAcesso } from "@/app/actions/conta";
 import { createClient } from "@/lib/supabase/client";
 import { Icon, type NomeIcone } from "./Icon";
 
-/* Primeiro acesso: uma janela explicando como o Feed de Notícias
+/* Primeiro acesso: uma janela explicando como o Daily Paper
  * funciona (uma vez só: boas_vindas_vista nos metadados do usuário) e o
  * e-mail de boas-vindas (registrarPrimeiroAcesso, também uma vez só). */
 

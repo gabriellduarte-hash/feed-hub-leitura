@@ -1,3 +1,4 @@
+import { consertarAcentos } from "./limpar-texto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hostDe, nomeDaFonte } from "./fonte";
 
@@ -158,7 +159,7 @@ async function enriquecer(supabase: SupabaseClient, linhas: LinhaArtigo[]) {
     const data = dataDoArtigo(l);
     return {
       id: l.id,
-      title: l.title,
+      title: consertarAcentos(l.title),
       url: l.url,
       author: l.author,
       content: l.content,
@@ -234,7 +235,7 @@ async function buscarNoticiasDoCatalogo(
     const data = dataDoArtigo(l);
     return {
       id: l.id,
-      title: l.title,
+      title: consertarAcentos(l.title),
       url: l.url,
       author: l.author,
       content: l.content,

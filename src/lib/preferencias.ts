@@ -11,7 +11,7 @@ export type Preferencias = {
 };
 
 export const PADRAO: Preferencias = {
-  tema: "claro",
+  tema: "escuro",
   fonteLeitura: "mono",
   tamanhoTexto: "m",
   densidade: "confortavel",
@@ -22,9 +22,17 @@ export const PADRAO: Preferencias = {
 
 export const CHAVE = "preferencias";
 
+// Versão 2 (08/10/2026): o padrão passou a ser o tema escuro. Antes disso
+// as preferências eram salvas inteiras, com o "claro" do padrão antigo
+// junto, mesmo sem a pessoa ter escolhido. Por isso o tema salvo antes da
+// versão 2 é ignorado uma vez; o que for escolhido depois vale.
+export const VERSAO = 2;
+
 export function lerPreferencias(texto: string | null): Preferencias {
   try {
-    return { ...PADRAO, ...(texto ? (JSON.parse(texto) as Partial<Preferencias>) : {}) };
+    const salvas = (texto ? JSON.parse(texto) : {}) as Partial<Preferencias> & { v?: number };
+    if (salvas.v !== VERSAO) delete salvas.tema;
+    return { ...PADRAO, ...salvas };
   } catch {
     return PADRAO;
   }
@@ -40,6 +48,6 @@ export function aplicarNoDocumento(p: Preferencias) {
   html.dataset.densidade = p.densidade;
 }
 
-// Versão em texto de aplicarNoDocumento, pra rodar inline antes do React.
-// Também migra a chave antiga "tema" ("light"/"dark") de antes das Configurações.
-export const SCRIPT_PREFERENCIAS = `try{var p=JSON.parse(localStorage.getItem("${CHAVE}")||"null");if(!p){var t=localStorage.getItem("tema");p=t?{tema:t==="light"?"claro":"escuro"}:{}}var h=document.documentElement,m=p.tema||"${PADRAO.tema}";h.dataset.theme=(m==="escuro"||(m==="sistema"&&matchMedia("(prefers-color-scheme: dark)").matches))?"dark":"light";h.dataset.fonte=p.fonteLeitura||"${PADRAO.fonteLeitura}";h.dataset.tamanho=p.tamanhoTexto||"${PADRAO.tamanhoTexto}";h.dataset.densidade=p.densidade||"${PADRAO.densidade}"}catch(e){}`;
+// Versão em texto de lerPreferencias + aplicarNoDocumento, pra rodar
+// inline antes do React.
+export const SCRIPT_PREFERENCIAS = `try{var p=JSON.parse(localStorage.getItem("${CHAVE}")||"null")||{};if(p.v!==${VERSAO})delete p.tema;var h=document.documentElement,m=p.tema||"${PADRAO.tema}";h.dataset.theme=(m==="escuro"||(m==="sistema"&&matchMedia("(prefers-color-scheme: dark)").matches))?"dark":"light";h.dataset.fonte=p.fonteLeitura||"${PADRAO.fonteLeitura}";h.dataset.tamanho=p.tamanhoTexto||"${PADRAO.tamanhoTexto}";h.dataset.densidade=p.densidade||"${PADRAO.densidade}"}catch(e){}`;

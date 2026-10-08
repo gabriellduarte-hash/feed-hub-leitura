@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
-import { aplicarNoDocumento, CHAVE, lerPreferencias, type Preferencias } from "./preferencias";
+import { aplicarNoDocumento, CHAVE, lerPreferencias, VERSAO, type Preferencias } from "./preferencias";
 import { useLocalStorage } from "./useLocalStorage";
 
 export function usePreferencias() {
@@ -11,7 +11,7 @@ export function usePreferencias() {
   const alterar = useCallback(
     (mudanca: Partial<Preferencias>) => {
       const nova = { ...preferencias, ...mudanca };
-      setTexto(JSON.stringify(nova));
+      setTexto(JSON.stringify({ ...nova, v: VERSAO }));
       aplicarNoDocumento(nova);
     },
     [preferencias, setTexto],

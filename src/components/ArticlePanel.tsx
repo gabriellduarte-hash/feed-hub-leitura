@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ArtigoLista } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
 import { limparTexto } from "@/lib/limpar-texto";
@@ -81,6 +81,55 @@ export function ArticlePanel({
     mostrarToast("Link copiado");
   }
 
+  // Compartilhar já convidando quem recebe a conhecer o Daily Paper
+  function mensagemDeCompartilhar() {
+    return (
+      `${a.title}\n\nVeja a matéria completa: ${a.url}\n\n` +
+      `Crie sua conta no Daily Paper e fique por dentro do que acontece pelo mundo: ${window.location.origin}/login`
+    );
+  }
+
+  // Celular: arrastar da esquerda pra direita fecha a notícia. Só conta
+  // gesto claramente horizontal, pra não atrapalhar a rolagem do texto.
+  const painel = useRef<HTMLDivElement>(null);
+  const toque = useRef<{ x: number; y: number; arrastando: boolean } | null>(null);
+
+  function aoTocar(e: React.TouchEvent) {
+    toque.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, arrastando: false };
+  }
+
+  function aoArrastar(e: React.TouchEvent) {
+    const t = toque.current;
+    if (!t || !painel.current) return;
+    const dx = e.touches[0].clientX - t.x;
+    const dy = e.touches[0].clientY - t.y;
+    if (!t.arrastando) {
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) return (toque.current = null); // é rolagem
+      if (dx < 12 || dx < Math.abs(dy) * 1.5) return;
+      t.arrastando = true;
+    }
+    painel.current.style.transition = "none";
+    painel.current.style.transform = `translateX(${Math.max(0, dx)}px)`;
+  }
+
+  function aoSoltar(e: React.TouchEvent) {
+    const t = toque.current;
+    toque.current = null;
+    const el = painel.current;
+    if (!t?.arrastando || !el) return;
+    const dx = e.changedTouches[0].clientX - t.x;
+    el.style.transition = "transform 180ms ease-out";
+    if (dx > Math.min(120, el.offsetWidth * 0.3)) {
+      el.style.transform = "translateX(100%)";
+      setTimeout(() => {
+        onFechar();
+        onSaiu();
+      }, 180);
+    } else {
+      el.style.transform = "";
+    }
+  }
+
   const blocos = formatar(limparTexto(a.content));
   const temTexto = blocos.length > 0 && a.content !== a.ai_summary;
 
@@ -92,9 +141,13 @@ export function ArticlePanel({
       />
 
       <div
+        ref={painel}
         role="dialog"
         aria-modal
         aria-label={a.title}
+        onTouchStart={aoTocar}
+        onTouchMove={aoArrastar}
+        onTouchEnd={aoSoltar}
         onAnimationEnd={(ev) => {
           if (saindo && ev.target === ev.currentTarget) onSaiu();
         }}
@@ -165,26 +218,35 @@ export function ArticlePanel({
                   >
                     Copiar link
                   </ItemMenu>
-                  <ItemMenu
-                    icone="email"
-                    onClick={() => {
-                      window.location.href = `mailto:?subject=${encodeURIComponent(a.title)}&body=${encodeURIComponent(a.url)}`;
-                      fechar();
-                    }}
-                  >
-                    Enviar por e-mail
-                  </ItemMenu>
                   {typeof navigator !== "undefined" && "share" in navigator && (
                     <ItemMenu
                       icone="compartilhar"
                       onClick={() => {
-                        navigator.share({ title: a.title, url: a.url }).catch(() => {});
+                        navigator.share({ title: a.title, text: mensagemDeCompartilhar() }).catch(() => {});
                         fechar();
                       }}
                     >
                       Compartilhar…
                     </ItemMenu>
                   )}
+                  <ItemMenu
+                    icone="enviar"
+                    onClick={() => {
+                      window.open(`https://wa.me/?text=${encodeURIComponent(mensagemDeCompartilhar())}`, "_blank", "noopener");
+                      fechar();
+                    }}
+                  >
+                    Enviar pelo WhatsApp
+                  </ItemMenu>
+                  <ItemMenu
+                    icone="email"
+                    onClick={() => {
+                      window.location.href = `mailto:?subject=${encodeURIComponent(a.title)}&body=${encodeURIComponent(mensagemDeCompartilhar())}`;
+                      fechar();
+                    }}
+                  >
+                    Enviar por e-mail
+                  </ItemMenu>
                 </>
               )}
             </Menu>

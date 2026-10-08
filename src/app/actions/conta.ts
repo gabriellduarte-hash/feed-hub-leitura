@@ -3,8 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { emailBoasVindas, emailFeedback, enviarEmail } from "@/lib/email";
 
-// Provisório: o feedback vai pro e-mail do projeto (pode trocar na Vercel)
-const EMAIL_DO_PROJETO = process.env.FEEDBACK_EMAIL?.trim() || "mktgabriellduarte@gmail.com";
+// Período de testes: o feedback vai pro Gmail do projeto (FEEDBACK_EMAIL na
+// Vercel troca, quando houver o e-mail do domínio)
+const EMAIL_DO_PROJETO = process.env.FEEDBACK_EMAIL?.trim() || "feeddailypaper@gmail.com";
 const TIPOS = { sugestao: "Sugestão", problema: "Problema", elogio: "Elogio", outro: "Outro" } as const;
 export type TipoFeedback = keyof typeof TIPOS;
 const MAX_POR_HORA = 5;
@@ -54,7 +55,7 @@ export async function registrarPrimeiroAcesso() {
   await supabase.auth.updateUser({ data: { boas_vindas_email: new Date().toISOString() } });
   await enviarEmail({
     para: user.email,
-    assunto: "Boas-vindas ao Feed de Notícias",
+    assunto: "Boas-vindas ao Daily Paper",
     html: emailBoasVindas(String(user.user_metadata?.nome ?? "")),
   });
 }

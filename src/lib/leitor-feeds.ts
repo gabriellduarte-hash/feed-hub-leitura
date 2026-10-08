@@ -1,8 +1,15 @@
 import { XMLParser } from "fast-xml-parser";
-import { decodificarEntidades, htmlParaTexto, limparTexto, MAX_CARACTERES } from "./limpar-texto";
+import {
+  consertarAcentos,
+  decodificarEntidades,
+  ehNoticiaDoGoogleNews,
+  htmlParaTexto,
+  limparTexto,
+  MAX_CARACTERES,
+} from "./limpar-texto";
 
 /** Mesmo User-Agent do coletor em Python (coletor/coletar.py). */
-export const USER_AGENT = "FeedNoticiasBot/0.1 (uso pessoal - estudo)";
+export const USER_AGENT = "DailyPaperBot/0.1 (uso pessoal - estudo)";
 const TIMEOUT_MS = 8000;
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECIONAMENTOS = 4;
@@ -77,7 +84,7 @@ export async function buscar(endereco: string): Promise<{ url: string; tipo: str
 /* ----------------------------------------------------------------------- */
 
 export function limparHtml(valor: unknown, limite?: number): string {
-  let texto = decodificarEntidades(textoDe(valor).replace(/<[^>]+>/g, " "))
+  let texto = consertarAcentos(decodificarEntidades(textoDe(valor).replace(/<[^>]+>/g, " ")))
     .replace(/\s+/g, " ")
     .trim();
   if (limite && texto.length > limite) texto = texto.slice(0, limite);
@@ -140,8 +147,14 @@ function primeiraImagem(item: No): string | null {
   }
   const anexo = (item.enclosure as No[] | undefined)?.find((e) => String(e["@_type"] ?? "").startsWith("image/"));
   if (anexo?.["@_url"]) return String(anexo["@_url"]);
-  const html = textoDe(item["content:encoded"]) || textoDe(item.description) || textoDe(item.summary) || textoDe(item.content);
-  return html.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ?? null;
+  // A primeira imagem do texto só vale se vier ANTES do texto (imagem de
+  // destaque). No meio do texto costuma ser de outra matéria citada (a CNN
+  // Brasil põe miniaturas de "leia também"): melhor ficar sem.
+  for (const html of [textoDe(item["content:encoded"]), textoDe(item.description), textoDe(item.summary), textoDe(item.content)]) {
+    const img = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (img && limparHtml(html.slice(0, img.index)).length < 20) return img[1];
+  }
+  return null;
 }
 
 function linkAtom(item: No): string {
@@ -288,7 +301,8 @@ export async function lerFeed(url: string): Promise<{ lido: FeedLido; noticias: 
     const site = semWww((new URL(url).searchParams.get("q") ?? "").replace(/^site:/, "").split("/")[0]);
     noticias = noticias
       .filter((_, i) => (lido.origens[i] ? semWww(new URL(lido.origens[i]).hostname) === site : false))
-      .map((n) => ({ ...n, title: tituloSemSite(n.title), content: null }));
+      .map((n) => ({ ...n, title: tituloSemSite(n.title), content: null }))
+      .filter((n) => ehNoticiaDoGoogleNews(n.title));
   }
   return { lido, noticias: maisRecentes(noticias) };
 }

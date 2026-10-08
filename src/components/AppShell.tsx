@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { Sidebar, type DadosSidebar } from "./Sidebar";
 import { BoasVindas } from "./BoasVindas";
+import { Logo, LogoReduzida } from "./Logo";
 import { abrirConfiguracoes, Configuracoes, estiloAvatar } from "./Configuracoes";
 import { Toaster } from "./Toast";
+import { BarraDeProgresso } from "./BarraDeProgresso";
 
 // Coleções, fontes e perfil, pra páginas que mostram a mesma coisa que o
 // menu lateral (no celular, a página Feeds) sem buscar tudo de novo
@@ -68,6 +70,9 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
       />
       <BoasVindas jaViu={!!dados.perfil.boasVindasVista} />
       <Toaster />
+      <Suspense fallback={null}>
+        <BarraDeProgresso />
+      </Suspense>
     </div>
     </DadosApp.Provider>
   );
@@ -79,10 +84,7 @@ function BarraTopoMobile() {
   return (
     <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border bg-background px-4 md:hidden">
       <Link href="/" className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-background">
-          <Icon nome="rss" tamanho={16} espessura={2.2} />
-        </span>
-        <span className="text-[14px] font-extrabold tracking-tight text-foreground">Feed de Notícias</span>
+        <Logo className="text-[16px]" />
       </Link>
       <Link
         href="/explorar"
@@ -111,13 +113,7 @@ function BarraAbasMobile({ dados }: { dados: DadosSidebar }) {
         className={`flex w-16 flex-col items-center gap-1 pb-2 text-[10px] ${noFeed ? "font-bold text-foreground" : "font-medium text-text-muted"}`}
       >
         <span className={`h-[2px] w-5 rounded-full ${noFeed ? "bg-accent" : "bg-transparent"}`} />
-        <span
-          className={`flex h-[21px] w-[21px] items-center justify-center rounded-md transition-colors ${
-            noFeed ? "bg-accent text-white" : "bg-foreground text-background"
-          }`}
-        >
-          <Icon nome="rss" tamanho={12} espessura={2.6} />
-        </span>
+        <LogoReduzida tamanho={21} className={noFeed ? "ring-2 ring-accent ring-offset-1 ring-offset-background" : ""} />
         Feed
       </Link>
       <AbaMobile href="/ler-mais-tarde" icone="marcador" rotulo="Salvos" ativo={pathname.startsWith("/ler-mais-tarde")} />

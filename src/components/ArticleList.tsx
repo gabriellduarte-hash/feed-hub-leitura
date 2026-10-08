@@ -10,6 +10,7 @@ import { carregarMaisArtigos } from "@/app/actions/paginacao";
 import { usePreferencias } from "@/lib/usePreferencias";
 import { Icon } from "./Icon";
 import { ArticlePanel } from "./ArticlePanel";
+import { LinhaEsqueleto } from "./Carregando";
 
 type Estado = { lido: boolean; salvo: boolean };
 
@@ -225,19 +226,6 @@ export function ArticleList({
         />
       )}
     </>
-  );
-}
-
-function LinhaEsqueleto() {
-  return (
-    <div className="flex animate-pulse gap-4 py-[var(--linha-py)] sm:gap-5">
-      <div className="aspect-[16/10] w-[104px] flex-shrink-0 bg-surface-active sm:w-[var(--capa-largura)]" />
-      <div className="flex flex-grow flex-col gap-2.5 pt-1">
-        <div className="h-3.5 w-4/5 rounded bg-surface-active" />
-        <div className="h-3 w-2/5 rounded bg-surface-active" />
-        <div className="h-3 w-full rounded bg-surface-hover" />
-      </div>
-    </div>
   );
 }
 

@@ -151,7 +151,7 @@ export function PainelEntrar({ aviso }: { aviso?: { texto: string; modo: Modo } 
           </div>
         )}
 
-        {erro && <p className="text-[13px] text-red-600">{erro}</p>}
+        {erro && <p className="text-[13px] text-red-500">{erro}</p>}
         {mensagem && <p className="rounded-md bg-accent-soft px-3 py-2 text-[13px] text-foreground">{mensagem}</p>}
 
         <button

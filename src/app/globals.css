@@ -16,6 +16,7 @@
   --accent-soft: #eee8ff;
   --accent-foreground: #ffffff;
   --overlay: rgba(18, 18, 18, 0.28);
+  color-scheme: light;
 }
 
 [data-theme="dark"] {
@@ -32,6 +33,8 @@
   --accent-soft: #221b3b;
   --accent-foreground: #ffffff;
   --overlay: rgba(0, 0, 0, 0.6);
+  /* barras de rolagem, campos e seletores nativos também no escuro */
+  color-scheme: dark;
 }
 
 /* Preferências > Aparência: atributos postos no <html> (lib/preferencias.ts) */

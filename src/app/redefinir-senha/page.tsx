@@ -36,7 +36,7 @@ export default function RedefinirSenhaPage() {
         </div>
         <input type="password" autoComplete="new-password" placeholder="Nova senha" value={senha} onChange={(e) => setSenha(e.target.value)} className={campo} required />
         <input type="password" autoComplete="new-password" placeholder="Repita a nova senha" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} className={campo} required />
-        {erro && <p className="text-[13px] text-red-600">{erro}</p>}
+        {erro && <p className="text-[13px] text-red-500">{erro}</p>}
         <button type="submit" disabled={carregando} className="h-11 rounded-lg bg-foreground text-sm font-bold text-background transition-colors hover:bg-accent disabled:opacity-60">
           {carregando ? "Salvando…" : "Salvar senha"}
         </button>

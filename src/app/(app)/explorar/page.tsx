@@ -49,6 +49,8 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
   const aba = texto(params.aba) === "url" ? "url" : "sites";
   const termo = texto(params.q);
   const categoria = texto(params.categoria);
+  // Fontes em inglês ficam separadas das brasileiras (filtro e seções)
+  const idioma = texto(params.idioma) === "en" ? "en" : texto(params.idioma) === "pt" ? "pt" : "";
   const colecaoId = texto(params.colecao);
 
   const supabase = await createClient();
@@ -67,11 +69,31 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
   const busca = semAcento(termo);
   const resultados = catalogo
     .map((c) => ({ c, r: relevancia(c, busca) }))
-    .filter(({ c, r }) => r >= 0 && (!categoria || c.category === categoria))
+    .filter(({ c, r }) => r >= 0 && (!categoria || c.category === categoria) && (!idioma || c.idioma === idioma))
     .sort((a, b) => a.r - b.r || a.c.name.localeCompare(b.c.name, "pt-BR"))
     .map(({ c }) => c);
-  const listando = !!termo || !!categoria;
+  const listando = !!termo || !!categoria || !!idioma;
+  const sufixoIdioma = idioma ? `&idioma=${idioma}` : "";
   const sufixoColecao = colecaoPreferida ? `&colecao=${colecaoPreferida.id}` : "";
+
+  const emIngles = resultados.filter((c) => c.idioma === "en");
+  const emPortugues = resultados.filter((c) => c.idioma !== "en");
+  const grupos =
+    !idioma && emIngles.length && emPortugues.length
+      ? [
+          { rotulo: "Em português", itens: emPortugues },
+          { rotulo: "Em inglês", itens: emIngles },
+        ]
+      : [{ rotulo: termo ? "No catálogo" : "Fontes", itens: resultados }];
+
+  function hrefIdioma(valor: "" | "pt" | "en") {
+    const busca = new URLSearchParams();
+    if (termo) busca.set("q", termo);
+    if (categoria) busca.set("categoria", categoria);
+    if (colecaoPreferida) busca.set("colecao", colecaoPreferida.id);
+    if (valor) busca.set("idioma", valor);
+    return `/explorar?${busca.toString()}`;
+  }
 
   return (
     <Conteudo>
@@ -106,6 +128,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
         <>
           <Form action="/explorar" className={listando ? "mb-4" : "mb-10"}>
             {colecaoPreferida && <input type="hidden" name="colecao" value={colecaoPreferida.id} />}
+            {idioma && <input type="hidden" name="idioma" value={idioma} />}
             <label className="flex h-12 items-center gap-3 rounded-lg border border-border bg-surface px-4 transition-colors focus-within:border-text-muted">
               <Icon nome="buscar" className="text-text-muted" />
               <input
@@ -132,7 +155,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
             {categorias.map((cat) => (
               <Link
                 key={cat}
-                href={`/explorar?categoria=${encodeURIComponent(cat)}${sufixoColecao}`}
+                href={`/explorar?categoria=${encodeURIComponent(cat)}${sufixoColecao}${sufixoIdioma}`}
                 className={`flex-shrink-0 rounded-lg border px-3 py-1.5 text-[13px] transition-colors ${
                   categoria === cat
                     ? "border-foreground bg-foreground font-semibold text-background"
@@ -147,7 +170,19 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
 
           {!listando ? (
             <>
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Temas</h2>
+              <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 className="text-lg font-semibold text-foreground">Temas</h2>
+                <span className="text-[13px] text-text-muted">
+                  Por idioma:{" "}
+                  <Link href={hrefIdioma("pt")} className="font-semibold text-text-secondary hover:text-accent">
+                    português
+                  </Link>{" "}
+                  ·{" "}
+                  <Link href={hrefIdioma("en")} className="font-semibold text-text-secondary hover:text-accent">
+                    inglês
+                  </Link>
+                </span>
+              </div>
               <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
                 {categorias.map((cat, i) => {
                   const destaque = catalogo.find((c) => c.category === cat)!;
@@ -187,50 +222,77 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
                   <Icon nome="chevronEsquerda" />
                 </Link>
                 <h2 className="text-lg font-semibold text-foreground">
-                  {categoria ? `#${categoria.toLowerCase()}` : `Resultados para "${termo}"`}
+                  {categoria
+                    ? `#${categoria.toLowerCase()}`
+                    : termo
+                      ? `Resultados para "${termo}"`
+                      : idioma === "en"
+                        ? "Fontes em inglês"
+                        : "Fontes em português"}
                 </h2>
               </div>
 
-              {resultados.length > 0 && (
-                <h3 className="mb-2 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
-                  {termo ? "No catálogo" : "Fontes"}
-                </h3>
-              )}
-              {resultados.length === 0 && !termo && (
-                <p className="text-sm text-text-secondary">Nenhuma fonte neste tema ainda.</p>
-              )}
-
-              <div className="flex flex-col">
-                {resultados.map((item) => (
-                  <LinhaFonte
-                    key={item.id}
-                    nome={item.name}
-                    host={hostDe(item.url)}
-                    detalhe={[`#${item.category.toLowerCase()}`, item.regiao, item.idioma === "en" ? "em inglês" : null]
-                      .filter(Boolean)
-                      .join(" · ")}
-                    descricao={item.description}
+              <div className="mb-6 flex w-fit rounded-lg border border-border p-0.5 text-[12px]" role="group" aria-label="Idioma">
+                {([["", "Todos"], ["pt", "Português"], ["en", "Inglês"]] as const).map(([valor, rotulo]) => (
+                  <Link
+                    key={valor}
+                    href={hrefIdioma(valor)}
+                    scroll={false}
+                    aria-current={idioma === valor ? "true" : undefined}
+                    className={`rounded-md px-3 py-1.5 transition-colors ${
+                      idioma === valor ? "bg-foreground font-semibold text-background" : "text-text-secondary hover:text-foreground"
+                    }`}
                   >
-                    {seguidas.has(item.url) ? (
-                      <span
-                        title="Seguindo"
-                        className="flex h-9 w-9 items-center justify-center gap-1.5 rounded-full border border-border text-sm text-text-secondary sm:h-8 sm:w-auto sm:rounded-md sm:px-3"
-                      >
-                        <Icon nome="check" tamanho={15} />
-                        <span className="hidden sm:inline">Seguindo</span>
-                      </span>
-                    ) : (
-                      <BotaoSeguir
-                        catalogoId={item.id}
-                        nome={item.name}
-                        categoria={item.category}
-                        colecoes={colecoes}
-                        colecaoPreferida={colecaoPreferida}
-                      />
-                    )}
-                  </LinhaFonte>
+                    {rotulo}
+                  </Link>
                 ))}
               </div>
+              {resultados.length === 0 && !termo && (
+                <p className="text-sm text-text-secondary">
+                  {idioma === "en" ? "Nenhuma fonte em inglês neste tema ainda." : "Nenhuma fonte neste tema ainda."}
+                </p>
+              )}
+
+              {grupos.map((grupo) =>
+                grupo.itens.length === 0 ? null : (
+                  <section key={grupo.rotulo} className="mb-10">
+                    <h3 className="mb-2 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
+                      {grupo.rotulo} <span className="font-normal">· {grupo.itens.length}</span>
+                    </h3>
+                    <div className="flex flex-col">
+                      {grupo.itens.map((item) => (
+                        <LinhaFonte
+                          key={item.id}
+                          nome={item.name}
+                          host={hostDe(item.url)}
+                          detalhe={[`#${item.category.toLowerCase()}`, item.regiao]
+                            .filter(Boolean)
+                            .join(" · ")}
+                          descricao={item.description}
+                        >
+                          {seguidas.has(item.url) ? (
+                            <span
+                              title="Seguindo"
+                              className="flex h-9 w-9 items-center justify-center gap-1.5 rounded-full border border-border text-sm text-text-secondary sm:h-8 sm:w-auto sm:rounded-md sm:px-3"
+                            >
+                              <Icon nome="check" tamanho={15} />
+                              <span className="hidden sm:inline">Seguindo</span>
+                            </span>
+                          ) : (
+                            <BotaoSeguir
+                              catalogoId={item.id}
+                              nome={item.name}
+                              categoria={item.category}
+                              colecoes={colecoes}
+                              colecaoPreferida={colecaoPreferida}
+                            />
+                          )}
+                        </LinhaFonte>
+                      ))}
+                    </div>
+                  </section>
+                ),
+              )}
 
               {termo && <BuscaNaWeb termo={termo} colecoes={colecoes} colecaoPreferida={colecaoPreferida} />}
 

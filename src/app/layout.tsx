@@ -23,7 +23,7 @@ const merriweather = Merriweather({
 const inter = Inter({ variable: "--font-sans-leitura", subsets: ["latin"], display: "swap", preload: false });
 
 export const metadata: Metadata = {
-  title: "Feed de Notícias",
+  title: "Daily Paper",
   description: "As notícias das suas fontes, resumidas e num só lugar.",
 };
 
@@ -31,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      data-theme="light"
+      data-theme="dark"
       suppressHydrationWarning
       className={`${jetBrainsMono.variable} ${merriweather.variable} ${inter.variable} h-full antialiased`}
     >
