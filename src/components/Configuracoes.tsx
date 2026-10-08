@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { enviarFeedback, excluirConta, type TipoFeedback } from "@/app/actions/conta";
 import {
   adicionarDestinatario,
   carregarResumo,
@@ -14,13 +15,14 @@ import { mensagemDeErro } from "@/lib/erros-auth";
 import { createClient } from "@/lib/supabase/client";
 import { usePreferencias } from "@/lib/usePreferencias";
 import type { Preferencias } from "@/lib/preferencias";
+import { ApoiarProjeto } from "./ApoiarProjeto";
 import { Icon, type NomeIcone } from "./Icon";
 import type { Perfil } from "./Sidebar";
 import { mostrarToast } from "./Toast";
 
 /* Abrir de qualquer lugar: abrirConfiguracoes("perfil") */
 const EVENTO = "feed:configuracoes";
-export type Secao = "geral" | "aparencia" | "perfil" | "acesso" | "resumo" | "atalhos";
+export type Secao = "geral" | "aparencia" | "perfil" | "acesso" | "resumo" | "atalhos" | "feedback" | "apoiar";
 export function abrirConfiguracoes(secao: Secao = "geral") {
   window.dispatchEvent(new CustomEvent(EVENTO, { detail: secao }));
 }
@@ -43,9 +45,11 @@ const SECOES: { id: Secao; rotulo: string; icone: NomeIcone }[] = [
   { id: "geral", rotulo: "Geral", icone: "check" },
   { id: "aparencia", rotulo: "Aparência", icone: "sol" },
   { id: "perfil", rotulo: "Seu perfil", icone: "lapis" },
-  { id: "acesso", rotulo: "Senha e acesso", icone: "link" },
+  { id: "acesso", rotulo: "Conta e acesso", icone: "link" },
   { id: "resumo", rotulo: "Resumo diário", icone: "enviar" },
   { id: "atalhos", rotulo: "Atalhos de teclado", icone: "comando" },
+  { id: "feedback", rotulo: "Feedback", icone: "email" },
+  { id: "apoiar", rotulo: "Apoiar o projeto", icone: "coracao" },
 ];
 
 type Colecao = { id: string; nome: string };
@@ -105,6 +109,8 @@ export function Configuracoes({ email, perfil, colecoes }: { email: string; perf
             {secao === "acesso" && <SecaoAcesso />}
             {secao === "resumo" && <SecaoResumo email={email} colecoes={colecoes} />}
             {secao === "atalhos" && <SecaoAtalhos />}
+            {secao === "feedback" && <SecaoFeedback />}
+            {secao === "apoiar" && <ApoiarProjeto titulo="Apoie o Feed de Notícias" />}
           </div>
         </div>
       </div>
@@ -388,7 +394,131 @@ function SecaoAcesso() {
           Sair de todos os aparelhos
         </button>
       </Grupo>
+      <ExcluirConta />
     </>
+  );
+}
+
+function ExcluirConta() {
+  const router = useRouter();
+  const [pendente, startTransition] = useTransition();
+  const [confirmacao, setConfirmacao] = useState("");
+  const [erro, setErro] = useState<string | null>(null);
+
+  function excluir(e: React.FormEvent) {
+    e.preventDefault();
+    if (confirmacao.trim().toUpperCase() !== "EXCLUIR") return;
+    startTransition(async () => {
+      const r = await excluirConta();
+      if (r.erro) return setErro(r.erro);
+      router.push("/login?conta=excluida");
+      router.refresh();
+    });
+  }
+
+  return (
+    <Grupo
+      titulo="Excluir conta"
+      descricao="Apaga sua conta e tudo o que está nela: coleções, fontes, notícias salvas e lidas, e o resumo diário. Não dá pra desfazer."
+    >
+      <form onSubmit={excluir} className="flex flex-col gap-3">
+        <label className="flex flex-col gap-1.5 text-[13px] text-text-secondary">
+          Para confirmar, digite EXCLUIR
+          <input
+            value={confirmacao}
+            onChange={(e) => setConfirmacao(e.target.value)}
+            autoComplete="off"
+            className={campo}
+          />
+        </label>
+        {erro && <p className="text-sm text-red-500">{erro}</p>}
+        <button
+          type="submit"
+          disabled={pendente || confirmacao.trim().toUpperCase() !== "EXCLUIR"}
+          className="h-10 w-fit rounded-lg bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-40"
+        >
+          {pendente ? "Excluindo…" : "Excluir minha conta"}
+        </button>
+      </form>
+    </Grupo>
+  );
+}
+
+const TIPOS_FEEDBACK: { valor: TipoFeedback; rotulo: string }[] = [
+  { valor: "sugestao", rotulo: "Sugestão" },
+  { valor: "problema", rotulo: "Problema" },
+  { valor: "elogio", rotulo: "Elogio" },
+  { valor: "outro", rotulo: "Outro" },
+];
+
+function SecaoFeedback() {
+  const [pendente, startTransition] = useTransition();
+  const [tipo, setTipo] = useState<TipoFeedback>("sugestao");
+  const [mensagem, setMensagem] = useState("");
+  const [erro, setErro] = useState<string | null>(null);
+  const [enviado, setEnviado] = useState(false);
+
+  function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    startTransition(async () => {
+      const r = await enviarFeedback(tipo, mensagem);
+      if (r.erro) return setErro(r.erro);
+      setMensagem("");
+      setEnviado(true);
+    });
+  }
+
+  if (enviado) {
+    return (
+      <Grupo titulo="Obrigado!" descricao="Recebemos seu feedback. Se precisar, respondemos no seu e-mail.">
+        <button
+          type="button"
+          onClick={() => setEnviado(false)}
+          className="h-10 w-fit rounded-lg border border-border px-4 text-sm text-foreground transition hover:bg-surface-hover"
+        >
+          Mandar outro
+        </button>
+      </Grupo>
+    );
+  }
+
+  return (
+    <Grupo titulo="Feedback" descricao="Achou um problema, tem uma ideia ou quer contar o que achou? Sua mensagem vai direto pra quem faz o projeto.">
+      <form onSubmit={enviar} className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Tipo">
+          {TIPOS_FEEDBACK.map((t) => (
+            <button
+              key={t.valor}
+              type="button"
+              aria-pressed={tipo === t.valor}
+              onClick={() => setTipo(t.valor)}
+              className={`h-9 rounded-md border px-3.5 text-[13px] transition-colors ${
+                tipo === t.valor
+                  ? "border-foreground bg-foreground font-semibold text-background"
+                  : "border-border text-text-secondary hover:border-accent hover:text-accent"
+              }`}
+            >
+              {t.rotulo}
+            </button>
+          ))}
+        </div>
+        <textarea
+          value={mensagem}
+          onChange={(e) => setMensagem(e.target.value)}
+          maxLength={2000}
+          rows={6}
+          required
+          placeholder="Escreva aqui…"
+          className="resize-y rounded-lg border border-border bg-surface p-3.5 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-text-muted focus:border-text-muted"
+        />
+        <div className="flex items-center gap-4">
+          <BotaoSalvar pendente={pendente}>{pendente ? "Enviando…" : "Enviar"}</BotaoSalvar>
+          <span className="text-xs text-text-muted">{mensagem.length}/2000</span>
+        </div>
+        {erro && <p className="text-sm text-red-500">{erro}</p>}
+      </form>
+    </Grupo>
   );
 }
 

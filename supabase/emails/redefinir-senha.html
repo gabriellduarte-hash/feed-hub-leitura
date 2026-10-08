@@ -1,0 +1,18 @@
+<!--
+  Modelo do e-mail "Reset Password" do Supabase, em português.
+  Onde colar: Supabase › Authentication › Emails › Reset Password
+    Subject: Crie uma senha nova no Feed de Notícias
+    Body: este arquivo inteiro.
+  O link usa token_hash e cai em /auth/confirmar (src/app/auth/confirmar),
+  que abre a sessão e leva pra /redefinir-senha. Funciona mesmo abrindo
+  o e-mail em outro aparelho.
+-->
+<div style="background:#f4f3f0;padding:32px 16px;font-family:'JetBrains Mono',Menlo,Consolas,monospace;">
+  <div style="max-width:520px;margin:0 auto;">
+    <p style="margin:0 0 24px;font-size:11px;font-weight:700;letter-spacing:3px;color:#121212;"><span style="color:#6d3ff5;">●</span>&nbsp;FEED DE NOTÍCIAS</p>
+    <h1 style="margin:0 0 12px;font-size:22px;font-weight:800;color:#121212;">Crie uma senha nova</h1>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.7;color:#3f3d39;">Alguém (provavelmente você) pediu para trocar a senha da sua conta. É só tocar no botão abaixo. O link vale por 1 hora.</p>
+    <p style="margin:0 0 24px;"><a href="{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=recovery&next=/redefinir-senha" style="display:inline-block;padding:12px 22px;border-radius:8px;background:#121212;color:#ffffff;font-size:13px;font-weight:700;text-decoration:none;">Criar senha nova →</a></p>
+    <p style="margin:0;font-size:11px;line-height:1.7;color:#8d8a83;">Se você não pediu isso, pode ignorar este e-mail: sua senha continua a mesma.</p>
+  </div>
+</div>

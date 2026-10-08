@@ -7,6 +7,7 @@ import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { Sidebar, type DadosSidebar } from "./Sidebar";
+import { BoasVindas } from "./BoasVindas";
 import { abrirConfiguracoes, Configuracoes, estiloAvatar } from "./Configuracoes";
 import { Toaster } from "./Toast";
 
@@ -65,6 +66,7 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
         perfil={dados.perfil}
         colecoes={dados.colecoes.map((c) => ({ id: c.id, nome: c.nome }))}
       />
+      <BoasVindas jaViu={!!dados.perfil.boasVindasVista} />
       <Toaster />
     </div>
     </DadosApp.Provider>

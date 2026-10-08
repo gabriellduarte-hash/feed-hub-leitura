@@ -62,6 +62,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           nome: String(user?.user_metadata?.nome ?? ""),
           sobrenome: String(user?.user_metadata?.sobrenome ?? ""),
           cor: String(user?.user_metadata?.cor ?? "roxo"),
+          boasVindasVista: Boolean(user?.user_metadata?.boas_vindas_vista),
         },
       }}
     >

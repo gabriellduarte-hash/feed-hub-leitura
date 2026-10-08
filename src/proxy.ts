@@ -32,9 +32,13 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/login");
+  const caminho = request.nextUrl.pathname;
+  const isAuthRoute = caminho.startsWith("/login");
+  // abertas pra quem não entrou: o link dos e-mails do Supabase e a
+  // página de apoio (o link do resumo por e-mail)
+  const publica = isAuthRoute || caminho.startsWith("/auth/") || caminho.startsWith("/apoiar");
 
-  if (!user && !isAuthRoute) {
+  if (!user && !publica) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

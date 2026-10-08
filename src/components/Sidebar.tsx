@@ -30,7 +30,7 @@ export type ColecaoSidebar = {
   fontes: FonteSidebar[];
 };
 
-export type Perfil = { nome: string; sobrenome: string; cor: string };
+export type Perfil = { nome: string; sobrenome: string; cor: string; boasVindasVista?: boolean };
 
 export type DadosSidebar = {
   colecoes: ColecaoSidebar[];
