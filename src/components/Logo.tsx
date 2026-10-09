@@ -17,15 +17,31 @@ export function Logo({ className = "" }: { className?: string }) {
 
 /** {} num quadrado preto, igual ao favicon nos dois temas (a borda clara
  * só aparece no escuro, pra o quadrado não sumir no fundo).
- * tamanho em px (lado do quadrado). */
-export function LogoReduzida({ tamanho = 32, className = "" }: { tamanho?: number; className?: string }) {
+ * tamanho em px (lado do quadrado). espacada: "{  }" num retângulo mais
+ * largo e mais grosso (o JetBrains Mono não passa do 800, então um
+ * contorno fino engrossa o traço); é a aba do meio no celular. */
+export function LogoReduzida({
+  tamanho = 32,
+  espacada = false,
+  className = "",
+}: {
+  tamanho?: number;
+  espacada?: boolean;
+  className?: string;
+}) {
   return (
     <span
       aria-hidden
-      style={{ width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.5) }}
-      className={`flex flex-shrink-0 items-center justify-center rounded-md border border-white/15 bg-[#121212] leading-none font-extrabold tracking-[-0.08em] text-accent ${className}`}
+      style={
+        espacada
+          ? { height: tamanho, paddingInline: Math.round(tamanho * 0.22), fontSize: Math.round(tamanho * 0.62) }
+          : { width: tamanho, height: tamanho, fontSize: Math.round(tamanho * 0.5) }
+      }
+      className={`flex flex-shrink-0 items-center justify-center rounded-md border border-white/15 bg-[#121212] leading-none font-extrabold text-accent ${
+        espacada ? "whitespace-pre [-webkit-text-stroke:0.5px_currentColor]" : "tracking-[-0.08em]"
+      } ${className}`}
     >
-      {"{}"}
+      {espacada ? "{  }" : "{}"}
     </span>
   );
 }

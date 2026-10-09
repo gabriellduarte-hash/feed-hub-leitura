@@ -113,7 +113,7 @@ function BarraAbasMobile({ dados }: { dados: DadosSidebar }) {
         className={`flex w-16 flex-col items-center gap-1 pb-2 text-[10px] ${noFeed ? "font-bold text-foreground" : "font-medium text-text-muted"}`}
       >
         <span className={`h-[2px] w-5 rounded-full ${noFeed ? "bg-accent" : "bg-transparent"}`} />
-        <LogoReduzida tamanho={21} className={noFeed ? "ring-2 ring-accent ring-offset-1 ring-offset-background" : ""} />
+        <LogoReduzida tamanho={21} espacada className={noFeed ? "ring-2 ring-accent ring-offset-1 ring-offset-background" : ""} />
         Feed
       </Link>
       <AbaMobile href="/ler-mais-tarde" icone="marcador" rotulo="Salvos" ativo={pathname.startsWith("/ler-mais-tarde")} />
