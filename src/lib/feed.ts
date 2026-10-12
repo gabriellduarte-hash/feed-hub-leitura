@@ -24,6 +24,8 @@ export type ArtigoLista = {
    * usuário pode não seguir: não tem lido/salvo, porque essas tabelas
    * apontam pra articles, não pra catalog_articles. */
   origem: "usuario" | "catalogo";
+  /** Trending: quantas outras fontes publicaram a mesma história */
+  cobertura?: number;
 };
 
 type LinhaArtigo = {
@@ -38,11 +40,17 @@ type LinhaArtigo = {
   published_at: string | null;
   collected_at: string;
   source_id: string;
-  sources: { id: string; name: string | null; url: string; topic_id: string };
+  fonte_nome: string | null;
+  fonte_url: string;
+  topic_id: string;
 };
 
+// View artigos_do_usuario (sql/038): as notícias dos feeds que a pessoa
+// segue, já com a fonte dela (nome personalizado e coleção). O mesmo feed
+// pode ser seguido por várias pessoas; a notícia é uma só.
+const VIEW_ARTIGOS = "artigos_do_usuario";
 const SELECT_ARTIGO =
-  "id, title, url, author, content, ai_summary, category, image_url, published_at, collected_at, source_id, sources!inner(id, name, url, topic_id)";
+  "id, title, url, author, content, ai_summary, category, image_url, published_at, collected_at, source_id, fonte_nome, fonte_url, topic_id";
 
 const FUSO = "America/Sao_Paulo";
 
@@ -122,14 +130,14 @@ export async function buscarArtigos(
   // rodada inteira com o mesmo horário, e a página "pularia" artigos.
   const inicio = filtro.offset ?? 0;
   let consulta = supabase
-    .from("articles")
+    .from(VIEW_ARTIGOS)
     .select(SELECT_ARTIGO)
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("id")
     .range(inicio, inicio + (filtro.limite ?? 60) - 1);
 
   if (filtro.fonteId) consulta = consulta.eq("source_id", filtro.fonteId);
-  if (filtro.topicoId) consulta = consulta.eq("sources.topic_id", filtro.topicoId);
+  if (filtro.topicoId) consulta = consulta.eq("topic_id", filtro.topicoId);
   if (filtro.ids) consulta = consulta.in("id", filtro.ids);
   if (filtro.busca) {
     // vírgula e parênteses têm significado na sintaxe do .or() do
@@ -166,9 +174,9 @@ async function enriquecer(supabase: SupabaseClient, linhas: LinhaArtigo[]) {
       ai_summary: l.ai_summary,
       category: l.category,
       image_url: l.image_url,
-      fonteId: l.sources.id,
-      fonteNome: nomeDaFonte(l.sources.name, l.sources.url),
-      fonteHost: hostDe(l.sources.url),
+      fonteId: l.source_id,
+      fonteNome: nomeDaFonte(l.fonte_nome, l.fonte_url),
+      fonteHost: hostDe(l.fonte_url),
       tempo: tempoRelativo(data, agora),
       dataCompleta: dataCompleta(data),
       dia: diaLocal(data),
@@ -256,6 +264,69 @@ async function buscarNoticiasDoCatalogo(
   });
 }
 
+type LinhaTrending = {
+  id: string;
+  title: string;
+  url: string;
+  author: string | null;
+  content: string | null;
+  ai_summary: string | null;
+  image_url: string | null;
+  published_at: string | null;
+  collected_at: string;
+  palavras_chave: string[] | null;
+  fonte_id: string;
+  fonte_nome: string;
+  fonte_url: string;
+  categoria: string;
+  cobertura: number;
+};
+
+/** Trending (função trending, sql/037): notícias do catálogo das últimas
+ * 12h, com foto e resumo, das que mais fontes estão cobrindo. Sem
+ * categoria, a principal de cada categoria; com categoria, a lista dela.
+ * Tira a mesma história contada por outra fonte (2+ palavras-chave em
+ * comum com uma que já entrou). */
+export async function buscarTrending(supabase: SupabaseClient, categoria?: string): Promise<ArtigoLista[]> {
+  const limite = categoria ? 6 : 8;
+  const { data, error } = await supabase.rpc("trending", { p_categoria: categoria ?? null, p_limite: 30 });
+  if (error || !data) return [];
+
+  const escolhidas: LinhaTrending[] = [];
+  for (const linha of data as LinhaTrending[]) {
+    const palavras = new Set(linha.palavras_chave ?? []);
+    const repetida = escolhidas.some((e) => (e.palavras_chave ?? []).filter((p) => palavras.has(p)).length >= 2);
+    if (!repetida) escolhidas.push(linha);
+    if (escolhidas.length === limite) break;
+  }
+
+  const agora = new Date();
+  return escolhidas.map((l) => {
+    const data = dataDoArtigo(l);
+    return {
+      id: l.id,
+      title: consertarAcentos(l.title),
+      url: l.url,
+      author: l.author,
+      content: l.content,
+      ai_summary: l.ai_summary,
+      category: l.categoria,
+      image_url: l.image_url,
+      fonteId: l.fonte_id,
+      fonteNome: l.fonte_nome,
+      fonteHost: hostDe(l.fonte_url),
+      tempo: tempoRelativo(data, agora),
+      dataCompleta: dataCompleta(data),
+      dia: diaLocal(data),
+      rotuloDia: rotuloDoDia(data, agora),
+      lido: false,
+      salvo: false,
+      origem: "catalogo" as const,
+      cobertura: l.cobertura,
+    };
+  });
+}
+
 /** Categorias que têm fonte na vitrine do catálogo (os filtros da aba
  * Explorar do Início: só as da vitrine são coletadas, sql/031). */
 export async function categoriasDoCatalogo(supabase: SupabaseClient) {
@@ -279,7 +350,7 @@ export function agruparPorDia(artigos: ArtigoLista[]): Secao[] {
 // descoberta ("Notícias", "Meio ambiente", "Automóveis")
 export const CATEGORIAS = [
   "Notícias", "Política", "Finanças", "Tecnologia", "Ciência", "Meio ambiente",
-  "Saúde", "Esportes", "Entretenimento", "Automóveis", "Mundo", "Humor", "Outros",
+  "Saúde", "Esportes", "Entretenimento", "Cinema", "Games", "Automóveis", "Mundo", "Humor", "Outros",
 ];
 
 export type Sugestao = { id: string; nome: string; host: string; descricao: string | null; categoria: string };
@@ -315,9 +386,9 @@ export async function categoriaDaColecao(
   }
 
   const { data: artigos } = await supabase
-    .from("articles")
-    .select("category, sources!inner(topic_id)")
-    .eq("sources.topic_id", topicoId)
+    .from(VIEW_ARTIGOS)
+    .select("category")
+    .eq("topic_id", topicoId)
     .not("category", "is", null)
     .limit(200);
   const categoria = maisFrequente((artigos ?? []).map((a) => a.category as string));
@@ -352,7 +423,9 @@ export async function buscarSugestoes(
   }));
 }
 
-/** Não lidos (janela de 30 dias, via view unread_counts) de um conjunto de fontes — ou de todas. */
+/** Não lidos (janela de 30 dias, via view unread_counts) de um conjunto de
+ * fontes — ou de todas. É o número do "marcar tudo como lido"; o do menu
+ * é o de novas desde a última visita (view novas_por_fonte, no layout). */
 export async function contarNaoLidos(supabase: SupabaseClient, fonteIds?: string[]) {
   let consulta = supabase.from("unread_counts").select("nao_lidos");
   if (fonteIds) {
@@ -377,7 +450,7 @@ export function categoriasPredominantes(artigos: ArtigoLista[], limite = 2) {
 export async function artigosNaUltimaSemana(supabase: SupabaseClient, fonteId: string) {
   const umaSemanaAtras = new Date(Date.now() - 7 * 86400000).toISOString();
   const { count } = await supabase
-    .from("articles")
+    .from(VIEW_ARTIGOS)
     .select("id", { count: "exact", head: true })
     .eq("source_id", fonteId)
     .gte("collected_at", umaSemanaAtras);

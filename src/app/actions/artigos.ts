@@ -69,9 +69,9 @@ export async function marcarTudoComoLido(escopo: Escopo) {
     ids = escopo.ids;
   } else {
     const desde = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    let consulta = supabase.from("articles").select("id, sources!inner(topic_id)").gte("collected_at", desde);
+    let consulta = supabase.from("artigos_do_usuario").select("id").gte("collected_at", desde);
     if (escopo.tipo === "fonte") consulta = consulta.eq("source_id", escopo.id);
-    if (escopo.tipo === "colecao") consulta = consulta.eq("sources.topic_id", escopo.id);
+    if (escopo.tipo === "colecao") consulta = consulta.eq("topic_id", escopo.id);
     const { data } = await consulta;
     ids = (data ?? []).map((a) => a.id as string);
   }

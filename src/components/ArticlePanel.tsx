@@ -312,7 +312,7 @@ export function ArticlePanel({
                 <h2 className="mb-6 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
                   {a.ai_summary ? "Texto da matéria" : "A notícia"}
                 </h2>
-                <div className="flex flex-col gap-6 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.9] text-text-secondary">
+                <div className="flex min-w-0 flex-col gap-6 font-[family-name:var(--fonte-leitura)] text-[length:var(--tamanho-leitura)] leading-[1.9] [overflow-wrap:anywhere] text-text-secondary">
                   {blocos.map((b, i) =>
                     b.tipo === "h" ? (
                       <h3 key={i} className="mt-3 text-[1.1em] leading-snug font-bold text-foreground">

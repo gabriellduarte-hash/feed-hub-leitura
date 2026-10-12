@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Merriweather } from "next/font/google";
 import { SCRIPT_PREFERENCIAS } from "@/lib/preferencias";
+import { SCRIPT_INSTALAR } from "@/lib/instalar";
 import "./globals.css";
 
 // Fonte variável: sem "weight", vem o eixo inteiro (100–800) + itálico
@@ -38,6 +39,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         {/* Aplica tema/fonte/tamanho/densidade antes da primeira pintura */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_PREFERENCIAS }} />
+        {/* Guarda o convite de instalação do navegador pro ConviteInstalar */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_INSTALAR }} />
         {children}
       </body>
     </html>

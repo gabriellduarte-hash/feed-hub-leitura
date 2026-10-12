@@ -24,12 +24,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .from("topics")
       .select("id, name, sources(id, name, url, favorite, topic_id)")
       .order("created_at"),
-    supabase.from("unread_counts").select("source_id, nao_lidos"),
+    // "novas desde a última visita" (sql/038): zera ao abrir a fonte, a
+    // coleção ou o feed todo (RegistrarVisita)
+    supabase.from("novas_por_fonte").select("source_id, novas"),
   ]);
 
-  const naoLidosPorFonte = new Map(
-    (contagens ?? []).map((c) => [c.source_id as string, c.nao_lidos as number]),
-  );
+  const novasPorFonte = new Map((contagens ?? []).map((c) => [c.source_id as string, c.novas as number]));
 
   const colecoes: ColecaoSidebar[] = ((topicos ?? []) as TopicoComFontes[]).map((t) => {
     const fontes = t.sources
@@ -37,7 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         id: s.id,
         nome: nomeDaFonte(s.name, s.url),
         host: hostDe(s.url),
-        naoLidos: naoLidosPorFonte.get(s.id) ?? 0,
+        novas: novasPorFonte.get(s.id) ?? 0,
         favorita: s.favorite,
         topicoId: s.topic_id,
       }))
@@ -45,7 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     return {
       id: t.id,
       nome: t.name,
-      naoLidos: fontes.reduce((soma, f) => soma + f.naoLidos, 0),
+      novas: fontes.reduce((soma, f) => soma + f.novas, 0),
       fontes,
     };
   });
@@ -54,7 +54,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppShell
       dados={{
         colecoes,
-        totalNaoLidos: colecoes.reduce((soma, c) => soma + c.naoLidos, 0),
+        totalNovas: colecoes.reduce((soma, c) => soma + c.novas, 0),
         email: user?.email ?? "",
         // nome/sobrenome/cor ficam nos metadados do usuário (Supabase Auth),
         // editados em Configurações > Perfil

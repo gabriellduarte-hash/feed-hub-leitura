@@ -19,7 +19,7 @@ export type FonteSidebar = {
   id: string;
   nome: string;
   host: string;
-  naoLidos: number;
+  novas: number;
   favorita: boolean;
   topicoId: string;
 };
@@ -27,7 +27,7 @@ export type FonteSidebar = {
 export type ColecaoSidebar = {
   id: string;
   nome: string;
-  naoLidos: number;
+  novas: number;
   fontes: FonteSidebar[];
 };
 
@@ -35,7 +35,7 @@ export type Perfil = { nome: string; sobrenome: string; cor: string; boasVindasV
 
 export type DadosSidebar = {
   colecoes: ColecaoSidebar[];
-  totalNaoLidos: number;
+  totalNovas: number;
   email: string;
   perfil: Perfil;
 };
@@ -380,7 +380,7 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
             )}
           </Menu>
         </div>
-        <Contador valor={dados.totalNaoLidos} destaque />
+        <Contador valor={dados.totalNovas} destaque />
       </div>
 
       <div
@@ -395,7 +395,7 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
           >
             <Icon nome="camadas" tamanho={18} className="text-text-secondary" />
             <span className="flex-grow font-semibold">Todos</span>
-            <Contador valor={dados.totalNaoLidos} />
+            <Contador valor={dados.totalNovas} />
           </Link>
 
           {favoritas.length > 0 && (
@@ -451,7 +451,7 @@ function SubmenuColecoes({ dados, pathname }: { dados: DadosSidebar; pathname: s
                       <Icon nome="adicionar" tamanho={16} />
                     </Link>
                   </div>
-                  <Contador valor={colecao.naoLidos} />
+                  <Contador valor={colecao.novas} />
                 </div>
 
                 <div
@@ -508,6 +508,7 @@ function Contador({ valor, destaque = false }: { valor: number; destaque?: boole
   return (
     <span className="ml-auto flex w-10 flex-shrink-0 justify-end pr-2">
       <span
+        title={`${valor} ${valor === 1 ? "nova" : "novas"} desde a sua última visita`}
         className={`rounded-md px-1.5 py-0.5 text-[11px] tracking-normal tabular-nums normal-case ${
           destaque ? "font-bold text-accent" : "text-text-muted"
         }`}
@@ -540,7 +541,7 @@ function LinhaFonte({
       <Link
         href={href}
         className={`flex min-w-0 flex-grow items-center gap-2.5 py-2 ${recuo ? "pl-8" : "pl-2"} ${
-          fonte.naoLidos === 0 ? "text-text-secondary" : "text-foreground"
+          fonte.novas === 0 ? "text-text-secondary" : "text-foreground"
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -564,7 +565,7 @@ function LinhaFonte({
           )}
         </Menu>
       </div>
-      <Contador valor={fonte.naoLidos} />
+      <Contador valor={fonte.novas} />
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { buscarPagina, categoriasDoCatalogo, contarNaoLidos } from "@/lib/feed";
+import { buscarPagina, buscarTrending, categoriasDoCatalogo, contarNaoLidos } from "@/lib/feed";
 import { ArticleList } from "@/components/ArticleList";
 import { FeedActions } from "@/components/FeedActions";
 import { Conteudo, Vazio } from "@/components/FeedLayout";
 import { PageHeader, Tabs } from "@/components/PageHeader";
+import { RegistrarVisita } from "@/components/RegistrarVisita";
 
 export default async function InicioPage(props: PageProps<"/">) {
   const params = await props.searchParams;
@@ -40,7 +41,7 @@ export default async function InicioPage(props: PageProps<"/">) {
 
 async function AbaEu() {
   const supabase = await createClient();
-  const pagina = await buscarPagina(supabase, {});
+  const [pagina, destaques] = await Promise.all([buscarPagina(supabase, {}), buscarTrending(supabase)]);
   if (pagina.artigos.length === 0) {
     return (
       <Vazio
@@ -50,14 +51,22 @@ async function AbaEu() {
       />
     );
   }
-  return <ArticleList key="eu" feed={{ ...pagina, filtro: {} }} />;
+  return (
+    <>
+      <RegistrarVisita escopo={{ tipo: "todas" }} />
+      <ArticleList key="eu" feed={{ ...pagina, filtro: {} }} destaques={destaques} />
+    </>
+  );
 }
 
 async function AbaExplorar({ categoria }: { categoria?: string }) {
   const supabase = await createClient();
   const categorias = await categoriasDoCatalogo(supabase);
   const ativa = categoria && categorias.includes(categoria) ? categoria : undefined;
-  const pagina = await buscarPagina(supabase, { catalogo: true, categoria: ativa });
+  const [pagina, destaques] = await Promise.all([
+    buscarPagina(supabase, { catalogo: true, categoria: ativa }),
+    buscarTrending(supabase, ativa),
+  ]);
 
   return (
     <>
@@ -78,7 +87,11 @@ async function AbaExplorar({ categoria }: { categoria?: string }) {
           acao={{ rotulo: "Ver sites para seguir", href: "/explorar" }}
         />
       ) : (
-        <ArticleList key={`explorar-${ativa ?? "tudo"}`} feed={{ ...pagina, filtro: { catalogo: true, categoria: ativa } }} />
+        <ArticleList
+          key={`explorar-${ativa ?? "tudo"}`}
+          feed={{ ...pagina, filtro: { catalogo: true, categoria: ativa } }}
+          destaques={destaques}
+        />
       )}
     </>
   );

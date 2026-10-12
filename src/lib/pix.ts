@@ -5,12 +5,38 @@
 
 export type ContaPix = { chave: string; nome: string; cidade: string };
 
-/** Configurada nas variáveis da Vercel (são públicas: aparecem na tela). */
+const CHAVE_ALEATORIA = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CPF = /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/;
+const CNPJ = /^\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}$/;
+
+/** A chave no formato que o banco procura, ou null se não for uma chave
+ * PIX válida. Em 12/10 a chave aleatória estava com "22:31" colado no fim
+ * (um horário copiado junto do app do banco) e nenhum QR funcionava. */
+export function normalizarChavePix(bruta: string): string | null {
+  const chave = bruta.trim();
+  if (CHAVE_ALEATORIA.test(chave)) return chave.toLowerCase();
+  if (EMAIL.test(chave) && chave.length <= 77) return chave.toLowerCase();
+  const digitos = chave.replace(/\D/g, "");
+  if (chave.startsWith("+")) return /^55\d{10,11}$/.test(digitos) ? `+${digitos}` : null; // celular: +55 DDD número
+  if (CPF.test(chave) || CNPJ.test(chave)) return digitos;
+  return null;
+}
+
+/** Configurada nas variáveis da Vercel (são públicas: aparecem na tela).
+ * Chave inválida conta como não configurada: melhor "em breve" do que um
+ * QR Code que o banco recusa. */
 export function contaPixConfigurada(): ContaPix | null {
-  const chave = process.env.NEXT_PUBLIC_PIX_CHAVE?.trim();
+  const bruta = process.env.NEXT_PUBLIC_PIX_CHAVE?.trim();
   const nome = process.env.NEXT_PUBLIC_PIX_NOME?.trim();
   const cidade = process.env.NEXT_PUBLIC_PIX_CIDADE?.trim();
-  return chave && nome && cidade ? { chave, nome, cidade } : null;
+  if (!bruta || !nome || !cidade) return null;
+  const chave = normalizarChavePix(bruta);
+  if (!chave) {
+    console.warn("[pix] NEXT_PUBLIC_PIX_CHAVE não é uma chave PIX válida (aleatória, e-mail, CPF, CNPJ ou +55 celular)");
+    return null;
+  }
+  return { chave, nome, cidade };
 }
 
 function campo(id: string, valor: string) {

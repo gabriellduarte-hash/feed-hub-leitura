@@ -90,7 +90,7 @@ export function PaginaFeeds() {
         >
           <Icon nome="camadas" tamanho={20} className="text-text-secondary" />
           <span className="flex-grow text-[15px] font-bold text-foreground">Todos</span>
-          <Contador valor={dados.totalNaoLidos} destaque />
+          <Contador valor={dados.totalNovas} destaque />
         </Link>
       </section>
 
@@ -169,7 +169,7 @@ export function PaginaFeeds() {
                 >
                   {colecao.nome}
                 </Link>
-                <Contador valor={colecao.naoLidos} />
+                <Contador valor={colecao.novas} />
                 <Link href={`/explorar?colecao=${colecao.id}`} aria-label={`Adicionar fonte em ${colecao.nome}`} className={botaoAcao}>
                   <Icon nome="adicionar" tamanho={18} />
                 </Link>
@@ -215,7 +215,12 @@ function Titulo({ children }: { children: React.ReactNode }) {
 function Contador({ valor, destaque = false }: { valor: number; destaque?: boolean }) {
   if (valor <= 0) return null;
   return (
-    <span className={`px-2 text-[12px] tabular-nums ${destaque ? "font-bold text-accent" : "text-text-muted"}`}>{valor}</span>
+    <span
+      title={`${valor} ${valor === 1 ? "nova" : "novas"} desde a sua última visita`}
+      className={`px-2 text-[12px] tabular-nums ${destaque ? "font-bold text-accent" : "text-text-muted"}`}
+    >
+      {valor}
+    </span>
   );
 }
 
@@ -233,14 +238,14 @@ function LinhaFonte({
       <Link
         href={`/feeds/fonte/${fonte.id}`}
         className={`flex min-w-0 flex-grow items-center gap-3 py-2.5 ${recuo ? "pl-12" : "pl-2"} ${
-          fonte.naoLidos === 0 ? "text-text-secondary" : "text-foreground"
+          fonte.novas === 0 ? "text-text-secondary" : "text-foreground"
         }`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={faviconDe(fonte.host)} alt="" className="h-5 w-5 flex-shrink-0 rounded" />
         <span className="truncate text-[14px]">{fonte.nome}</span>
       </Link>
-      <Contador valor={fonte.naoLidos} />
+      <Contador valor={fonte.novas} />
       <Menu alinhar="direita" rotulo={`Opções de ${fonte.nome}`} gatilho={<Icon nome="mais" tamanho={18} />} classeGatilho={botaoAcao}>
         {(fechar) => (
           <ItensMenuFonte

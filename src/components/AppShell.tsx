@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
@@ -12,10 +12,12 @@ import { Logo, LogoReduzida } from "./Logo";
 import { abrirConfiguracoes, Configuracoes, estiloAvatar } from "./Configuracoes";
 import { Toaster } from "./Toast";
 import { BarraDeProgresso } from "./BarraDeProgresso";
+import { ConviteInstalar } from "./ConviteInstalar";
 
 // Coleções, fontes e perfil, pra páginas que mostram a mesma coisa que o
 // menu lateral (no celular, a página Feeds) sem buscar tudo de novo
 const DadosApp = createContext<DadosSidebar | null>(null);
+const MarcarVisitadas = createContext<(fonteIds: string[]) => void>(() => {});
 
 export function useDadosApp() {
   const dados = useContext(DadosApp);
@@ -23,7 +25,35 @@ export function useDadosApp() {
   return dados;
 }
 
-export function AppShell({ dados, children }: { dados: DadosSidebar; children: React.ReactNode }) {
+/** Zera o contador de novas dessas fontes no menu (RegistrarVisita). */
+export function useMarcarVisitadas() {
+  return useContext(MarcarVisitadas);
+}
+
+/** Os mesmos dados, com as fontes visitadas agora valendo zero novas. */
+function descontarVisitadas(dados: DadosSidebar, visitadas: Set<string>): DadosSidebar {
+  if (visitadas.size === 0) return dados;
+  const colecoes = dados.colecoes.map((c) => {
+    const fontes = c.fontes.map((f) => (visitadas.has(f.id) ? { ...f, novas: 0 } : f));
+    return { ...c, fontes, novas: fontes.reduce((soma, f) => soma + f.novas, 0) };
+  });
+  return { ...dados, colecoes, totalNovas: colecoes.reduce((soma, c) => soma + c.novas, 0) };
+}
+
+export function AppShell({ dados: dadosDoServidor, children }: { dados: DadosSidebar; children: React.ReactNode }) {
+  // Visitas desta sessão de navegação. Quando o servidor manda dados novos
+  // (depois de marcar como lido, por exemplo), eles já vêm com as visitas
+  // gravadas no banco, então a lista recomeça vazia.
+  const [visitas, setVisitas] = useState({ base: dadosDoServidor, fontes: new Set<string>() });
+  if (visitas.base !== dadosDoServidor) setVisitas({ base: dadosDoServidor, fontes: new Set() });
+  const dados = useMemo(() => descontarVisitadas(dadosDoServidor, visitas.fontes), [dadosDoServidor, visitas.fontes]);
+  const marcarVisitadas = useCallback((ids: string[]) => {
+    setVisitas((atual) => {
+      if (ids.every((id) => atual.fontes.has(id))) return atual;
+      return { ...atual, fontes: new Set([...atual.fontes, ...ids]) };
+    });
+  }, []);
+
   const [valorRecolhido, setValorRecolhido] = useLocalStorage("sidebar-recolhida", "0");
   const recolhido = valorRecolhido === "1";
   const [irParaAberto, setIrParaAberto] = useState(false);
@@ -45,6 +75,7 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
 
   return (
     <DadosApp.Provider value={dados}>
+    <MarcarVisitadas.Provider value={marcarVisitadas}>
     <div
       className="flex h-[100dvh] bg-background"
       // O leitor de artigos centraliza no espaço à direita do menu: ele lê
@@ -70,10 +101,12 @@ export function AppShell({ dados, children }: { dados: DadosSidebar; children: R
       />
       <BoasVindas jaViu={!!dados.perfil.boasVindasVista} />
       <Toaster />
+      <ConviteInstalar />
       <Suspense fallback={null}>
         <BarraDeProgresso />
       </Suspense>
     </div>
+    </MarcarVisitadas.Provider>
     </DadosApp.Provider>
   );
 }

@@ -11,6 +11,7 @@ import { usePreferencias } from "@/lib/usePreferencias";
 import { Icon } from "./Icon";
 import { ArticlePanel } from "./ArticlePanel";
 import { LinhaEsqueleto } from "./Carregando";
+import { Trending } from "./Trending";
 
 type Estado = { lido: boolean; salvo: boolean };
 
@@ -21,10 +22,13 @@ export function ArticleList({
   secoes: secoesFixas,
   feed,
   mostrarFim = false,
+  destaques,
 }: {
   secoes?: Secao[];
   feed?: Feed;
   mostrarFim?: boolean;
+  /** Faixa Trending no topo (Início) */
+  destaques?: ArtigoLista[];
 }) {
   const [extras, setExtras] = useState<ArtigoLista[]>([]);
   const [temMais, setTemMais] = useState(feed?.temMais ?? false);
@@ -126,8 +130,10 @@ export function ArticleList({
   // j/k e as setas do painel andam só pelo que está visível na lista
   const navegaveis = useMemo(() => secoes.flatMap((sec) => sec.artigos), [secoes]);
   const indiceAberto = abertoId ? navegaveis.findIndex((a) => a.id === abertoId) : -1;
-  const aberto = indiceAberto >= 0 ? navegaveis[indiceAberto] : null;
-  const exibido = artigos.find((a) => a.id === exibidoId) ?? null;
+  // Um destaque do Trending aberto não faz parte da lista (j/k vão pra ela)
+  const destaqueAberto = abertoId ? (destaques?.find((a) => a.id === abertoId) ?? null) : null;
+  const aberto = indiceAberto >= 0 ? navegaveis[indiceAberto] : destaqueAberto;
+  const exibido = artigos.find((a) => a.id === exibidoId) ?? destaques?.find((a) => a.id === exibidoId) ?? null;
 
   const irPara = useCallback(
     (delta: number) => {
@@ -160,6 +166,7 @@ export function ArticleList({
 
   return (
     <>
+      {destaques && destaques.length > 0 && <Trending artigos={destaques} abertoId={abertoId} onAbrir={abrir} />}
       <div className="flex max-w-[720px] flex-col gap-8">
         {secoes.map((secao) => (
           <section key={secao.titulo} className="flex flex-col gap-1">

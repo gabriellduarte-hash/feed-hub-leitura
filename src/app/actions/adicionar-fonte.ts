@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { clienteAdmin } from "@/lib/supabase/admin";
 import { detectarFonte, type FonteDetectada } from "@/lib/descobrir-fonte";
 import { coletarFonte, type Noticia } from "@/lib/leitor-feeds";
 import { nomeDaFonte } from "@/lib/fonte";
@@ -13,7 +14,7 @@ export type ResultadoAdicionar = {
   erro?: string;
   fonteId?: string;
   nome?: string;
-  /** Notícias que já estavam no banco (mesma fonte em outro lugar, ou catálogo) */
+  /** Notícias que já estavam no banco (alguém já seguia o feed, ou catálogo) */
   importadas?: number;
   /** Notícias coletadas agora, na hora de adicionar */
   coletadas?: number;
@@ -51,8 +52,10 @@ function soRecentes(noticias: Noticia[]): Noticia[] {
 /** Adicionar fonte, por qualquer caminho (catálogo, "por URL", Organizar):
  * 1. entende o link (RSS? site com RSS escondido? sitemap? Google Notícias?);
  * 2. não deixa seguir duas vezes a mesma fonte;
- * 3. aproveita as notícias das últimas 24h que já estão no banco (sql/023 e 031);
- * 4. coleta na hora as das últimas 24h, pra fonte já aparecer com notícias. */
+ * 3. segue o feed (sql/038): se alguém já seguia, as notícias já estão
+ *    no banco e aparecem na hora, sem coletar de novo;
+ * 4. feed novo: importa as das últimas 24h que o catálogo já tem e coleta
+ *    na hora, pra fonte já aparecer com notícias. */
 export async function adicionarFonte(pedido: {
   url?: string;
   catalogoId?: string;
@@ -113,46 +116,60 @@ export async function adicionarFonte(pedido: {
   if (!colecao) return { erro: "Escolha uma coleção ou dê nome a uma nova." };
 
   const nome = pedido.nome?.trim() || fonte.nome || null;
-  const { data: criada, error } = await supabase
-    .from("sources")
-    .insert({ topic_id: colecao, url: fonte.url, name: nome, type: fonte.tipo })
-    .select("id")
-    .single();
-  if (error || !criada) return { erro: "Não foi possível adicionar a fonte. Tente de novo." };
+  const { data: seguida, error } = await supabase
+    .rpc("seguir_fonte", { p_topic_id: colecao, p_url: fonte.url, p_tipo: fonte.tipo, p_nome: nome })
+    .single<{ fonte_id: string; feed: string; feed_novo: boolean }>();
+  if (error || !seguida) return { erro: "Não foi possível adicionar a fonte. Tente de novo." };
 
-  // 3) notícias que já estão no banco
-  const { data: importadas } = await supabase.rpc("importar_noticias_existentes", { p_source_id: criada.id });
-
-  // 4) coleta na hora. Se o site falhar, a fonte fica adicionada do mesmo
-  // jeito: o coletor diário tenta de novo (e cai no Google Notícias).
+  let importadas = 0;
   let coletadas = 0;
-  try {
-    const noticias = soRecentes(await coletarFonte(fonte.url, fonte.tipo));
-    if (noticias.length > 0) {
-      const { data: inseridas } = await supabase
-        .from("articles")
-        .upsert(
-          noticias.map((n) => ({ ...n, source_id: criada.id })),
-          { onConflict: "source_id,url", ignoreDuplicates: true },
-        )
-        .select("id");
-      coletadas = inseridas?.length ?? 0;
-    }
-  } catch {
-    // segue sem as notícias de agora
-  }
+  if (!seguida.feed_novo) {
+    // 3) alguém já seguia: as notícias do feed já estão aqui
+    const desde = new Date(Date.now() - HORAS_AO_SEGUIR * 3600_000).toISOString();
+    const { count } = await supabase
+      .from("artigos_do_usuario")
+      .select("id", { count: "exact", head: true })
+      .eq("source_id", seguida.fonte_id)
+      .gte("collected_at", desde);
+    importadas = count ?? 0;
+  } else {
+    // 4) feed novo: o que o catálogo já tem...
+    const { data } = await supabase.rpc("importar_do_catalogo", { p_fonte_id: seguida.fonte_id });
+    importadas = typeof data === "number" ? data : 0;
 
-  // Coleta completa + resumo da IA no GitHub Actions (se configurado).
-  // Se falhar, só vai pro log da Vercel: a fonte já está adicionada e a
-  // coleta de hora em hora completa o resto.
-  const disparo = await dispararColetaDaFonte(criada.id);
-  if (!disparo.ok) console.warn(`[fonte-nova] ${disparo.motivo}`);
+    // ...e a coleta na hora, gravada com a chave secreta (ver admin.ts).
+    // Se o site falhar ou a chave não existir, a fonte fica seguida do
+    // mesmo jeito: o workflow e a coleta de hora em hora completam.
+    const admin = clienteAdmin();
+    if (admin) {
+      try {
+        const noticias = soRecentes(await coletarFonte(fonte.url, fonte.tipo));
+        if (noticias.length > 0) {
+          const { data: inseridas } = await admin
+            .from("articles")
+            .upsert(
+              noticias.map((n) => ({ ...n, feed_id: seguida.feed })),
+              { onConflict: "feed_id,url", ignoreDuplicates: true },
+            )
+            .select("id");
+          coletadas = inseridas?.length ?? 0;
+        }
+      } catch {
+        // segue sem as notícias de agora
+      }
+    }
+
+    // Coleta completa + resumo da IA no GitHub Actions (se configurado).
+    // Se falhar, só vai pro log da Vercel.
+    const disparo = await dispararColetaDaFonte(seguida.feed);
+    if (!disparo.ok) console.warn(`[fonte-nova] ${disparo.motivo}`);
+  }
 
   revalidatePath("/", "layout");
   return {
-    fonteId: criada.id,
+    fonteId: seguida.fonte_id,
     nome: nomeDaFonte(nome, fonte.url),
-    importadas: typeof importadas === "number" ? importadas : 0,
+    importadas,
     coletadas,
   };
 }

@@ -22,7 +22,7 @@ const EXPLICACAO: Record<number, string> = {
   422: "o GitHub não aceitou o pedido (o workflow precisa estar na branch main)",
 };
 
-export async function dispararColetaDaFonte(fonteId: string): Promise<ResultadoDisparo> {
+export async function dispararColetaDaFonte(feedId: string): Promise<ResultadoDisparo> {
   const token = process.env.GITHUB_ACTIONS_TOKEN?.trim();
   const repo = process.env.GITHUB_REPO_COLETOR?.trim()
     .replace(/^https?:\/\/github\.com\//, "")
@@ -39,7 +39,8 @@ export async function dispararColetaDaFonte(fonteId: string): Promise<ResultadoD
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
-      body: JSON.stringify({ ref: "main", inputs: { fonte_id: fonteId } }),
+      // o input se chama fonte_id, mas recebe o id do feed (o coletor aceita os dois)
+      body: JSON.stringify({ ref: "main", inputs: { fonte_id: feedId } }),
       signal: AbortSignal.timeout(5000),
     });
     if (resposta.status === 204) return { ok: true, motivo: "coleta completa disparada no GitHub" };

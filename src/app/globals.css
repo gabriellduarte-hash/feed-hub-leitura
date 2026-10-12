@@ -92,6 +92,20 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   font-feature-settings: "calt" 1, "zero" 1;
+  /* link ou palavra enorme no texto quebra a linha em vez de empurrar a
+     página pro lado */
+  overflow-wrap: break-word;
+}
+
+/* iPhone: o Safari dá zoom ao tocar num campo com letra menor que 16px e
+   a página fica ampliada e fora do centro. No celular, todo campo tem
+   16px (fora das camadas do Tailwind, então vale mais que text-sm). */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }
 
 ::selection {
