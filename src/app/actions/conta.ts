@@ -3,8 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { emailBoasVindas, emailFeedback, enviarEmail } from "@/lib/email";
 
-// Período de testes: o feedback vai pro Gmail do projeto (FEEDBACK_EMAIL na
-// Vercel troca, quando houver o e-mail do domínio)
+// O feedback vai pro Gmail do projeto enquanto o domínio não recebe e-mail
+// (FEEDBACK_EMAIL na Vercel troca, ex.: contato@dailypaper.news)
 const EMAIL_DO_PROJETO = process.env.FEEDBACK_EMAIL?.trim() || "feeddailypaper@gmail.com";
 const TIPOS = { sugestao: "Sugestão", problema: "Problema", elogio: "Elogio", outro: "Outro" } as const;
 export type TipoFeedback = keyof typeof TIPOS;

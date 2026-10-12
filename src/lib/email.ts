@@ -1,51 +1,15 @@
-/** Só pro servidor (server actions): usa senhas e chaves secretas.
+/** Só pro servidor (server actions): usa a chave secreta do Resend.
  *
- * Dois jeitos de enviar, nessa ordem:
- *  1. SMTP (SMTP_USER + SMTP_PASSWORD na Vercel): no período de testes, o
- *     Gmail do projeto com uma senha de app. Envia como esse Gmail, pra
- *     qualquer pessoa (o Gmail aceita algumas centenas de e-mails por dia).
- *  2. Resend (RESEND_API_KEY): enquanto não houver domínio verificado no
- *     Resend, o remetente é onboarding@resend.dev e ele só entrega pro
- *     e-mail da própria conta Resend. Com o domínio, volta a ser o caminho
- *     principal: é só tirar as variáveis de SMTP.
- * Sem nenhum dos dois, não envia e devolve false (quem chama decide). */
+ * Envia pelo Resend, do domínio do projeto (dailypaper.news, verificado
+ * no Resend). Sem RESEND_API_KEY, não envia e devolve false (quem chama
+ * decide). */
 
-import nodemailer from "nodemailer";
-
-const REMETENTE_RESEND = "Daily Paper <onboarding@resend.dev>";
-export const URL_DO_HUB = "https://feed-hub-leitura.vercel.app";
+const REMETENTE = "Daily Paper <naoresponda@dailypaper.news>";
+export const URL_DO_HUB = "https://dailypaper.news";
 
 type Email = { para: string; assunto: string; html: string; responderPara?: string };
 
-async function enviarPorSmtp(email: Email, usuario: string, senha: string) {
-  const transporte = nodemailer.createTransport({
-    host: process.env.SMTP_HOST?.trim() || "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user: usuario, pass: senha },
-  });
-  await transporte.sendMail({
-    from: `Daily Paper <${usuario}>`,
-    to: email.para,
-    subject: email.assunto,
-    html: email.html,
-    replyTo: email.responderPara,
-  });
-}
-
 export async function enviarEmail(email: Email) {
-  const usuarioSmtp = process.env.SMTP_USER?.trim();
-  const senhaSmtp = process.env.SMTP_PASSWORD?.replace(/\s+/g, ""); // a senha de app do Google vem com espaços
-  if (usuarioSmtp && senhaSmtp) {
-    try {
-      await enviarPorSmtp(email, usuarioSmtp, senhaSmtp);
-      return true;
-    } catch (erro) {
-      console.error("[email] falha no SMTP:", erro);
-      return false;
-    }
-  }
-
   const chave = process.env.RESEND_API_KEY?.trim();
   if (!chave) {
     console.warn("[email] sem RESEND_API_KEY: e-mail não enviado");
@@ -56,7 +20,7 @@ export async function enviarEmail(email: Email) {
       method: "POST",
       headers: { Authorization: `Bearer ${chave}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: REMETENTE_RESEND,
+        from: REMETENTE,
         to: [email.para],
         subject: email.assunto,
         html: email.html,
