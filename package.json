@@ -9,9 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mozilla/readability": "^0.6.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "fast-xml-parser": "^5.11.2",
+    "linkedom": "^0.18.13",
     "next": "16.3.7",
     "qrcode": "^1.5.4",
     "react": "19.2.8",

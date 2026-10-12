@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { clienteAdmin } from "@/lib/supabase/admin";
+import { gravarNoticias } from "@/lib/gravar-noticias";
 import { detectarFonte, type FonteDetectada } from "@/lib/descobrir-fonte";
 import { coletarFonte, type Noticia } from "@/lib/leitor-feeds";
 import { nomeDaFonte } from "@/lib/fonte";
@@ -144,16 +145,8 @@ export async function adicionarFonte(pedido: {
     if (admin) {
       try {
         const noticias = soRecentes(await coletarFonte(fonte.url, fonte.tipo));
-        if (noticias.length > 0) {
-          const { data: inseridas } = await admin
-            .from("articles")
-            .upsert(
-              noticias.map((n) => ({ ...n, feed_id: seguida.feed })),
-              { onConflict: "feed_id,url", ignoreDuplicates: true },
-            )
-            .select("id");
-          coletadas = inseridas?.length ?? 0;
-        }
+        // sem repetir as que o catálogo trouxe pelo Google Notícias (manchetes.ts)
+        if (noticias.length > 0) coletadas = await gravarNoticias(admin, { tabela: "articles", feedId: seguida.feed }, noticias);
       } catch {
         // segue sem as notícias de agora
       }
