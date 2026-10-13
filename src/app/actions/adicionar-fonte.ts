@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { gravarNoticias } from "@/lib/gravar-noticias";
+import { registrarSeguir } from "@/lib/eventos";
 import { detectarFonte, type FonteDetectada } from "@/lib/descobrir-fonte";
 import { coletarFonte, type Noticia } from "@/lib/leitor-feeds";
 import { nomeDaFonte } from "@/lib/fonte";
@@ -63,6 +64,9 @@ export async function adicionarFonte(pedido: {
   nome?: string;
   topicId?: string;
   novaColecao?: string;
+  /** Por onde a pessoa chegou, pras estatísticas (sql/043): catálogo,
+   * busca na web ou link colado */
+  origem?: "catalogo" | "web" | "link";
 }): Promise<ResultadoAdicionar> {
   const supabase = await createClient();
   const {
@@ -157,6 +161,13 @@ export async function adicionarFonte(pedido: {
     const disparo = await dispararColetaDaFonte(seguida.feed);
     if (!disparo.ok) console.warn(`[fonte-nova] ${disparo.motivo}`);
   }
+
+  await registrarSeguir(supabase, user.id, {
+    tipo: "seguiu",
+    origem: pedido.origem ?? (pedido.catalogoId ? "catalogo" : "link"),
+    fonte: fonte.url,
+    categoria: categoriaSugerida,
+  });
 
   revalidatePath("/", "layout");
   return {

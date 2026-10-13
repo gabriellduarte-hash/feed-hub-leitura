@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { registrarSeguir } from "@/lib/eventos";
 
 export type Resultado = { erro?: string } | undefined;
 
@@ -47,10 +48,9 @@ export async function moverFonte(id: string, topicId: string): Promise<Resultado
 
 export async function deixarDeSeguir(id: string, estavaNaPagina: boolean): Promise<Resultado> {
   const supabase = await createClient();
-  const resultado = conferir(
-    await supabase.from("sources").delete().eq("id", id).select("id"),
-    "Não foi possível deixar de seguir essa fonte. Tente de novo.",
-  );
+  const resposta = await supabase.from("sources").delete().eq("id", id).select("id, url");
+  const resultado = conferir(resposta, "Não foi possível deixar de seguir essa fonte. Tente de novo.");
+  await registrarSaidas(supabase, resposta.data);
   if (!resultado && estavaNaPagina) redirect("/feeds/todos");
   return resultado;
 }
@@ -81,11 +81,23 @@ export async function renomearColecao(id: string, nome: string): Promise<Resulta
 
 export async function excluirColecao(id: string, estavaNaPagina: boolean): Promise<Resultado> {
   const supabase = await createClient();
-  // cascade: apaga as fontes da coleção e os artigos delas
+  // cascade: apaga as fontes da coleção (as notícias são dos feeds e ficam)
+  const { data: fontesDaColecao } = await supabase.from("sources").select("url").eq("topic_id", id);
   const resultado = conferir(
     await supabase.from("topics").delete().eq("id", id).select("id"),
     "Não foi possível excluir a coleção.",
   );
+  if (!resultado) await registrarSaidas(supabase, fontesDaColecao);
   if (!resultado && estavaNaPagina) redirect("/feeds/todos");
   return resultado;
+}
+
+/** Estatísticas (sql/043): quais feeds as pessoas deixam de seguir. */
+async function registrarSaidas(supabase: Awaited<ReturnType<typeof createClient>>, fontes: { url: string }[] | null) {
+  if (!fontes?.length) return;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  for (const f of fontes) await registrarSeguir(supabase, user.id, { tipo: "deixou_de_seguir", origem: "hub", fonte: f.url });
 }

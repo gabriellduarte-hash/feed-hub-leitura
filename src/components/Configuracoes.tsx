@@ -76,7 +76,7 @@ export function Configuracoes({ email, perfil, colecoes }: { email: string; perf
     <div className="fixed inset-0 z-[60] flex items-center justify-center md:p-4" role="dialog" aria-modal aria-label="Configurações">
       <div className="animate-aparece absolute inset-0 bg-overlay backdrop-blur-[2px]" onClick={() => setSecao(null)} />
       <div className="animate-menu-in relative flex h-full w-full max-w-[960px] flex-col overflow-hidden bg-surface md:h-[min(700px,92vh)] md:flex-row md:rounded-lg md:border md:border-border shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]">
-        <nav className="flex flex-shrink-0 gap-0.5 overflow-x-auto border-b border-border bg-sidebar p-2 pr-14 md:w-[240px] md:flex-col md:overflow-visible md:border-r md:border-b-0 md:p-3">
+        <nav className="sem-barra flex flex-shrink-0 gap-0.5 overflow-x-auto border-b border-border bg-sidebar p-2 pr-14 md:w-[240px] md:flex-col md:overflow-visible md:border-r md:border-b-0 md:p-3">
           <div className="hidden px-3 pt-2 pb-4 text-[17px] font-bold tracking-tight text-foreground md:block">Configurações</div>
           {SECOES.map((s) => (
             <button

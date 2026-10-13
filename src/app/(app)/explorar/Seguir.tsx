@@ -42,7 +42,7 @@ export function BotaoSeguir({
     if (!colecao && !novaColecao) return;
     setSeguindo(true);
     startTransition(async () => {
-      const r = await adicionarFonte({ catalogoId, url, topicId: colecao?.id, novaColecao });
+      const r = await adicionarFonte({ catalogoId, url, topicId: colecao?.id, novaColecao, origem: catalogoId ? "catalogo" : "web" });
       if (r.erro) {
         setSeguindo(false);
         mostrarToast(r.erro);

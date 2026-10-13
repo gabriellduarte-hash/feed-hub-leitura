@@ -33,7 +33,7 @@ export function Tabs({
   ativa: string;
 }) {
   return (
-    <nav className="-mt-2 mb-8 flex gap-7 overflow-x-auto border-b border-border md:mb-10">
+    <nav className="sem-barra -mt-2 mb-8 flex gap-7 overflow-x-auto border-b border-border md:mb-10 md:overflow-visible">
       {abas.map((aba) => (
         <Link
           key={aba.chave}

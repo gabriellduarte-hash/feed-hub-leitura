@@ -38,6 +38,8 @@ export type DadosSidebar = {
   totalNovas: number;
   email: string;
   perfil: Perfil;
+  /** Vê a página Relatórios (ADMIN_EMAILS) */
+  admin?: boolean;
 };
 
 /* Item do menu: ícone grande + nome (aberto) ou só o ícone com dica (recolhido). */
@@ -125,6 +127,15 @@ export function Sidebar({
           ativo={pathname.startsWith("/lidos-recentemente")}
         />
         <ItemNav href="/buscar" icone="buscar" rotulo="Buscar" recolhido={recolhido} ativo={pathname.startsWith("/buscar")} />
+        {dados.admin && (
+          <ItemNav
+            href="/relatorios"
+            icone="tendencia"
+            rotulo="Relatórios"
+            recolhido={recolhido}
+            ativo={pathname.startsWith("/relatorios")}
+          />
+        )}
         <button
           type="button"
           onClick={onIrPara}

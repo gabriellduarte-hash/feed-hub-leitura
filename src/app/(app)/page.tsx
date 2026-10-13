@@ -89,6 +89,7 @@ async function AbaExplorar({ categoria }: { categoria?: string }) {
       ) : (
         <ArticleList
           key={`explorar-${ativa ?? "tudo"}`}
+          origem="explorar"
           feed={{ ...pagina, filtro: { catalogo: true, categoria: ativa } }}
           destaques={destaques}
         />

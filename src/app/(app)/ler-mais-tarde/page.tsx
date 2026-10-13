@@ -34,7 +34,7 @@ export default async function LerMaisTardePage() {
           texto="Toque no marcador de uma notícia para guardá-la aqui e ler quando quiser."
         />
       ) : (
-        <ArticleList secoes={[{ titulo: "Mais recentes", artigos }]} mostrarFim />
+        <ArticleList secoes={[{ titulo: "Mais recentes", artigos }]} mostrarFim origem="salvos" />
       )}
     </Conteudo>
   );

@@ -6,6 +6,7 @@ import { faviconDe } from "@/lib/fonte";
 import { limparTexto } from "@/lib/limpar-texto";
 import { textoPuro } from "@/lib/resumo";
 import { definirLido, definirSalvo } from "@/app/actions/artigos";
+import { registrarAbertura, type OrigemAbertura } from "@/app/actions/eventos";
 import { carregarMaisArtigos } from "@/app/actions/paginacao";
 import { usePreferencias } from "@/lib/usePreferencias";
 import { Icon } from "./Icon";
@@ -23,12 +24,15 @@ export function ArticleList({
   feed,
   mostrarFim = false,
   destaques,
+  origem = "feed",
 }: {
   secoes?: Secao[];
   feed?: Feed;
   mostrarFim?: boolean;
   /** Faixa Trending no topo (Início) */
   destaques?: ArtigoLista[];
+  /** De onde as notícias são abertas, pras estatísticas de uso (sql/043) */
+  origem?: OrigemAbertura;
 }) {
   const [extras, setExtras] = useState<ArtigoLista[]>([]);
   const [temMais, setTemMais] = useState(feed?.temMais ?? false);
@@ -106,11 +110,11 @@ export function ArticleList({
   );
 
   const alterar = useCallback(
-    (a: ArtigoLista, mudanca: Partial<Estado>) => {
+    (a: ArtigoLista, mudanca: Partial<Estado>, como: "abriu" | "marcou" = "marcou") => {
       const novo = { ...estadoDe(a), ...mudanca };
       setOverrides((o) => ({ ...o, [a.id]: novo }));
       startTransition(async () => {
-        if (mudanca.lido !== undefined) await definirLido(a.id, mudanca.lido);
+        if (mudanca.lido !== undefined) await definirLido(a.id, mudanca.lido, como);
         if (mudanca.salvo !== undefined) await definirSalvo(a.id, mudanca.salvo);
       });
     },
@@ -122,9 +126,15 @@ export function ArticleList({
       setAbertoId(a.id);
       setExibidoId(a.id);
       linhas.current.get(a.id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      if (preferencias.marcarLidoAoAbrir && a.origem === "usuario" && !estadoDe(a).lido) alterar(a, { lido: true });
+      if (preferencias.marcarLidoAoAbrir && a.origem === "usuario" && !estadoDe(a).lido) alterar(a, { lido: true }, "abriu");
+      registrarAbertura({
+        origem: destaques?.some((d) => d.id === a.id) ? "trending" : origem,
+        categoria: a.category,
+        fonte: a.fonteHost,
+        noticiaId: a.id,
+      }).catch(() => {});
     },
-    [alterar, estadoDe, preferencias.marcarLidoAoAbrir],
+    [alterar, estadoDe, preferencias.marcarLidoAoAbrir, destaques, origem],
   );
 
   // j/k e as setas do painel andam só pelo que está visível na lista

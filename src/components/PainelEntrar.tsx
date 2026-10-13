@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { mensagemDeErro } from "@/lib/erros-auth";
 import { createClient } from "@/lib/supabase/client";
+import { Girando, TelaAbrindoFeed } from "./Carregando";
 import { Icon } from "./Icon";
 
 /* Janela de entrar / criar conta / esqueci a senha da página de entrada.
@@ -34,6 +35,7 @@ export function PainelEntrar({ aviso }: { aviso?: { texto: string; modo: Modo } 
   const [erro, setErro] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState<string | null>(aviso?.texto ?? null);
   const [carregando, setCarregando] = useState(false);
+  const [entrando, setEntrando] = useState(false);
 
   useEffect(() => {
     const aoAbrir = (e: Event) => {
@@ -83,19 +85,25 @@ export function PainelEntrar({ aviso }: { aviso?: { texto: string; modo: Modo } 
       modo === "criar"
         ? await supabase.auth.signUp({ email, password: senha, options: { emailRedirectTo: `${origem}/auth/confirmar?next=/` } })
         : await supabase.auth.signInWithPassword({ email, password: senha });
-    setCarregando(false);
-    if (resposta.error) return setErro(mensagemDeErro(resposta.error));
+    if (resposta.error) {
+      setCarregando(false);
+      return setErro(mensagemDeErro(resposta.error));
+    }
     // Com confirmação de e-mail ligada no Supabase, a conta só entra depois do link
     if (modo === "criar" && !resposta.data.session) {
+      setCarregando(false);
       return setMensagem("Conta criada! Mandamos um link de confirmação para o seu e-mail.");
     }
-    setMensagem(modo === "criar" ? "Conta criada! Entrando…" : null);
+    // Deu certo: a tela de "abrindo" fica até o feed carregar
+    setEntrando(true);
     router.push("/");
     router.refresh();
   }
 
   const campo =
     "h-11 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none transition-colors focus:border-text-muted";
+
+  if (entrando) return <TelaAbrindoFeed />;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal aria-label={TITULOS[modo]}>
@@ -159,7 +167,16 @@ export function PainelEntrar({ aviso }: { aviso?: { texto: string; modo: Modo } 
           disabled={carregando}
           className="mt-1 h-11 rounded-lg bg-foreground text-sm font-bold text-background transition-colors hover:bg-accent disabled:opacity-60"
         >
-          {carregando ? "Aguarde…" : modo === "esqueci" ? "Mandar link" : TITULOS[modo]}
+          {carregando ? (
+            <span className="flex items-center justify-center gap-2.5">
+              <Girando />
+              {modo === "entrar" ? "Entrando…" : modo === "criar" ? "Criando conta…" : "Mandando…"}
+            </span>
+          ) : modo === "esqueci" ? (
+            "Mandar link"
+          ) : (
+            TITULOS[modo]
+          )}
         </button>
 
         <p className="text-center text-[13px] text-text-secondary">

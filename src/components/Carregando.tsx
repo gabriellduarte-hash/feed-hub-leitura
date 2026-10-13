@@ -1,4 +1,5 @@
 import { Conteudo } from "./FeedLayout";
+import { LogoReduzida } from "./Logo";
 
 /* Esqueletos de carregamento: aparecem na hora em que você troca de
  * página (pelos loading.tsx) enquanto o servidor busca as notícias. */
@@ -31,5 +32,36 @@ export function EsqueletoPagina() {
         </div>
       </div>
     </Conteudo>
+  );
+}
+
+/** Rodinha pra botão ocupado ("Entrando…"). Herda a cor do texto. */
+export function Girando({ tamanho = 15 }: { tamanho?: number }) {
+  return (
+    <span
+      aria-hidden
+      style={{ width: tamanho, height: tamanho }}
+      className="inline-block flex-shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+    />
+  );
+}
+
+/** Tela inteira enquanto o feed abre depois de entrar (login, senha nova):
+ * o primeiro carregamento busca coleções, fontes e notícias e leva uns
+ * segundos, e sem isso o clique parecia não ter funcionado. Fica até a
+ * página do feed tomar o lugar. */
+export function TelaAbrindoFeed() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="animate-aparece fixed inset-0 z-[80] flex flex-col items-center justify-center gap-5 bg-background"
+    >
+      <LogoReduzida tamanho={56} className="animate-pulse" />
+      <p className="flex items-center gap-2.5 text-[14px] font-semibold text-text-secondary">
+        <Girando tamanho={14} />
+        Abrindo o seu feed…
+      </p>
+    </div>
   );
 }

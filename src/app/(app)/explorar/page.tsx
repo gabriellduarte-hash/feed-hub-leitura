@@ -2,6 +2,7 @@ import Form from "next/form";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CATEGORIAS } from "@/lib/feed";
+import { registrarBusca } from "@/lib/eventos";
 import { faviconDe, hostDe } from "@/lib/fonte";
 import { Conteudo } from "@/components/FeedLayout";
 import { Icon, type NomeIcone } from "@/components/Icon";
@@ -72,6 +73,8 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
     .filter(({ c, r }) => r >= 0 && (!categoria || c.category === categoria) && (!idioma || c.idioma === idioma))
     .sort((a, b) => a.r - b.r || a.c.name.localeCompare(b.c.name, "pt-BR"))
     .map(({ c }) => c);
+  // busca sem resultado no catálogo = fonte que as pessoas querem e não temos
+  if (termo) await registrarBusca(supabase, { origem: "fontes", termo, resultados: resultados.length });
   const listando = !!termo || !!categoria || !!idioma;
   const sufixoIdioma = idioma ? `&idioma=${idioma}` : "";
   const sufixoColecao = colecaoPreferida ? `&colecao=${colecaoPreferida.id}` : "";
@@ -151,7 +154,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
           </Form>
 
           {/* durante a busca, os temas viram atalho (no celular rola pro lado) */}
-          <div className={`-mx-4 mb-10 gap-2 ${listando ? "flex" : "hidden"} overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0`}>
+          <div className={`-mx-4 mb-10 gap-2 ${listando ? "flex" : "hidden"} sem-barra overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0`}>
             {categorias.map((cat) => (
               <Link
                 key={cat}

@@ -25,7 +25,7 @@ export default async function LidosRecentementePage() {
           texto="As notícias que você abrir aparecem aqui."
         />
       ) : (
-        <ArticleList secoes={[{ titulo: "Mais recentes", artigos }]} mostrarFim />
+        <ArticleList secoes={[{ titulo: "Mais recentes", artigos }]} mostrarFim origem="lidos" />
       )}
     </Conteudo>
   );

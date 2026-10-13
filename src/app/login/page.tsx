@@ -32,7 +32,11 @@ const PERGUNTAS: { pergunta: string; resposta: string }[] = [
   { pergunta: "É grátis?", resposta: "Sim. O projeto é independente, não tem anúncios e se mantém com o apoio de quem usa." },
   { pergunta: "Preciso saber o que é RSS?", resposta: "Não. Escolha as fontes na lista ou cole o endereço de um site; o Daily Paper descobre sozinho como ler as notícias dele." },
   { pergunta: "O resumo substitui a matéria?", resposta: "Não. Ele ajuda a decidir o que ler. O texto completo e o link para o site original estão sempre ali." },
-  { pergunta: "O que vocês guardam sobre mim?", resposta: "Só o necessário: seu e-mail, as fontes que você segue e suas preferências. Você pode excluir a conta quando quiser, em Configurações." },
+  {
+    pergunta: "O que vocês guardam sobre mim?",
+    resposta:
+      "Seu e-mail, as fontes que você segue e suas preferências. Também registramos, de forma anônima, o que é aberto, buscado e seguido, para saber quais fontes e assuntos incluir no catálogo; esses números só aparecem somados, nunca por pessoa, e são apagados depois de 90 dias. Nada disso é vendido. Você pode excluir a conta quando quiser, em Configurações, e tudo vai junto.",
+  },
 ];
 
 export default async function EntradaPage(props: PageProps<"/login">) {

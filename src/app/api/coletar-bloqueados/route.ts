@@ -20,6 +20,9 @@ const ORCAMENTO_MS = 45_000; // folga antes do limite da função
 const PAGINAS_POR_RODADA = 40;
 const PAGINAS_EM_PARALELO = 4;
 const TEXTO_CURTO = 600; // abaixo disso, o "texto" é só a descrição do feed
+// Resumo do feed que chama pro site ("Continue lendo »"): cortado, mesmo
+// passando de TEXTO_CURTO. Mesma regra do coletor (enriquecer.CORTADO).
+const CORTADO = /(continue lendo|leia mais|read more|keep reading)\s*(»|›|\.\.\.|…)/i;
 
 type Pendente = { id: string; url: string; content: string | null; image_url: string | null; author: string | null };
 
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest) {
       .order("collected_at", { ascending: false })
       .limit(PAGINAS_POR_RODADA);
     return ((data ?? []) as Pendente[])
-      .filter((p) => !p.content || p.content.length < TEXTO_CURTO || !p.image_url)
+      .filter((p) => !p.content || p.content.length < TEXTO_CURTO || CORTADO.test(p.content) || !p.image_url)
       .map((p) => ({ ...p, tabela }));
   };
   const fila = [

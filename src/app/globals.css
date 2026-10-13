@@ -108,6 +108,23 @@ body {
   }
 }
 
+/* Barras de rolagem finas e na cor do tema em qualquer navegador: o
+   Chrome mostrava a barra grossa e com setas, o Firefox a fina. Com as
+   propriedades padrão (Chrome 121+), as setas somem. */
+html {
+  scrollbar-color: var(--surface-active) transparent;
+}
+* {
+  scrollbar-width: thin;
+}
+/* Faixas que rolam pro lado (Trending, abas, temas): sem barra nenhuma */
+.sem-barra {
+  scrollbar-width: none;
+}
+.sem-barra::-webkit-scrollbar {
+  display: none;
+}
+
 ::selection {
   background: var(--accent);
   color: var(--accent-foreground);

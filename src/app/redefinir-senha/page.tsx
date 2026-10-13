@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { mensagemDeErro } from "@/lib/erros-auth";
 import { createClient } from "@/lib/supabase/client";
+import { Girando, TelaAbrindoFeed } from "@/components/Carregando";
 
 /** Depois do link de "Esqueci a senha" (/auth/confirmar já abriu a sessão). */
 export default function RedefinirSenhaPage() {
@@ -12,6 +13,7 @@ export default function RedefinirSenhaPage() {
   const [confirmacao, setConfirmacao] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+  const [entrando, setEntrando] = useState(false);
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -20,11 +22,16 @@ export default function RedefinirSenhaPage() {
     setErro(null);
     setCarregando(true);
     const { error } = await createClient().auth.updateUser({ password: senha });
-    setCarregando(false);
-    if (error) return setErro(mensagemDeErro(error));
+    if (error) {
+      setCarregando(false);
+      return setErro(mensagemDeErro(error));
+    }
+    setEntrando(true);
     router.push("/");
     router.refresh();
   }
+
+  if (entrando) return <TelaAbrindoFeed />;
 
   const campo = "h-11 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none focus:border-text-muted";
   return (
@@ -38,7 +45,14 @@ export default function RedefinirSenhaPage() {
         <input type="password" autoComplete="new-password" placeholder="Repita a nova senha" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} className={campo} required />
         {erro && <p className="text-[13px] text-red-500">{erro}</p>}
         <button type="submit" disabled={carregando} className="h-11 rounded-lg bg-foreground text-sm font-bold text-background transition-colors hover:bg-accent disabled:opacity-60">
-          {carregando ? "Salvando…" : "Salvar senha"}
+          {carregando ? (
+            <span className="flex items-center justify-center gap-2.5">
+              <Girando />
+              Salvando…
+            </span>
+          ) : (
+            "Salvar senha"
+          )}
         </button>
       </form>
     </main>

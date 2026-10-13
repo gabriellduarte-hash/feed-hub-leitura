@@ -17,14 +17,17 @@ function atualizarTudo() {
   revalidatePath("/", "layout");
 }
 
-export async function definirLido(articleId: string, lido: boolean) {
+/** origem (sql/043): "abriu" (abriu no leitor) ou "marcou" (botão ou
+ * tecla m). O "marcar tudo como lido" grava "tudo". Os relatórios contam
+ * como leitura só as duas primeiras. */
+export async function definirLido(articleId: string, lido: boolean, origem: "abriu" | "marcou" = "marcou") {
   const { supabase, user } = await usuarioLogado();
   if (!user) return;
 
   if (lido) {
     await supabase
       .from("read_articles")
-      .upsert({ user_id: user.id, article_id: articleId }, { ignoreDuplicates: true });
+      .upsert({ user_id: user.id, article_id: articleId, origem }, { ignoreDuplicates: true });
   } else {
     await supabase
       .from("read_articles")
@@ -80,7 +83,7 @@ export async function marcarTudoComoLido(escopo: Escopo) {
   await supabase
     .from("read_articles")
     .upsert(
-      ids.map((id) => ({ user_id: user.id, article_id: id })),
+      ids.map((id) => ({ user_id: user.id, article_id: id, origem: "tudo" })),
       { ignoreDuplicates: true },
     );
   atualizarTudo();
