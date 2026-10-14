@@ -156,7 +156,7 @@ export async function adicionarFonte(pedido: {
       }
     }
 
-    // Coleta completa + resumo da IA no GitHub Actions (se configurado).
+    // Coleta completa (texto inteiro, categoria) no GitHub Actions (se configurado).
     // Se falhar, só vai pro log da Vercel.
     const disparo = await dispararColetaDaFonte(seguida.feed);
     if (!disparo.ok) console.warn(`[fonte-nova] ${disparo.motivo}`);

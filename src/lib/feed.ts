@@ -284,23 +284,16 @@ type LinhaTrending = {
   cobertura: number;
 };
 
-/** Trending (função trending, sql/037): notícias do catálogo das últimas
- * 12h, com foto e resumo, das que mais fontes estão cobrindo. Sem
- * categoria, a principal de cada categoria; com categoria, a lista dela.
- * Tira a mesma história contada por outra fonte (2+ palavras-chave em
- * comum com uma que já entrou). */
+/** Trending (função trending, sql/044, sem IA): as histórias das últimas
+ * 12h que mais sites estão cobrindo, cada uma pela notícia do catálogo que
+ * a representa (agrupar.py no coletor). Sem categoria, a principal de cada
+ * categoria; com categoria, a lista dela. Cada linha já é uma história
+ * diferente. */
 export async function buscarTrending(supabase: SupabaseClient, categoria?: string): Promise<ArtigoLista[]> {
   const limite = categoria ? 6 : 8;
-  const { data, error } = await supabase.rpc("trending", { p_categoria: categoria ?? null, p_limite: 30 });
+  const { data, error } = await supabase.rpc("trending", { p_categoria: categoria ?? null, p_limite: limite });
   if (error || !data) return [];
-
-  const escolhidas: LinhaTrending[] = [];
-  for (const linha of data as LinhaTrending[]) {
-    const palavras = new Set(linha.palavras_chave ?? []);
-    const repetida = escolhidas.some((e) => (e.palavras_chave ?? []).filter((p) => palavras.has(p)).length >= 2);
-    if (!repetida) escolhidas.push(linha);
-    if (escolhidas.length === limite) break;
-  }
+  const escolhidas = data as LinhaTrending[];
 
   const agora = new Date();
   return escolhidas.map((l) => {

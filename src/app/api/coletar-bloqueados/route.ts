@@ -7,7 +7,7 @@ import { clienteAdmin } from "@/lib/supabase/admin";
 /* Sites abertos que barram as máquinas do GitHub (sql/040,
  * coletar_pelo_hub): o coletor em Python não consegue nem o RSS nem as
  * páginas deles, mas da Vercel eles respondem. O workflow "Coleta de
- * notícias" chama esta rota toda hora, antes do resumo da IA:
+ * notícias" chama esta rota toda hora, antes da classificação e das histórias:
  *   1. lê o feed de cada um (feeds seguidos e fontes da vitrine);
  *   2. grava sem repetir o que já veio pelo Google Notícias;
  *   3. abre as páginas das notícias sem texto ou sem foto (respeitando o

@@ -13,7 +13,7 @@ import { Icon, type NomeIcone } from "./Icon";
 const PASSOS: { icone: NomeIcone; titulo: string; texto: string }[] = [
   { icone: "rss", titulo: "Siga suas fontes", texto: "Escolha entre quase mil veículos ou cole o endereço de qualquer site." },
   { icone: "camadas", titulo: "Organize em coleções", texto: "Agrupe por assunto; cada coleção vira um feed só dela." },
-  { icone: "ia", titulo: "Leia o resumo", texto: "Cada notícia abre com um resumo feito por IA e o texto completo." },
+  { icone: "tendencia", titulo: "Veja o que está em alta", texto: "No topo do Início, as histórias que mais sites estão contando agora." },
   { icone: "enviar", titulo: "Receba por e-mail", texto: "Escolha o horário em Configurações › Resumo diário." },
 ];
 

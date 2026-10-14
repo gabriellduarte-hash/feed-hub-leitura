@@ -5,7 +5,7 @@
  *
  * Opcional: precisa de duas variáveis de ambiente na Vercel. Sem elas,
  * não faz nada (a fonte já sai com as notícias coletadas pelo hub, só
- * sem o resumo da IA até a próxima coleta).
+ * sem o texto completo até a próxima coleta).
  *   GITHUB_ACTIONS_TOKEN  token "fine-grained" com permissão Actions: Read and write
  *                         só no repositório do coletor
  *   GITHUB_REPO_COLETOR   ex.: gabriellduarte-hash/feed-noticias-personalizado

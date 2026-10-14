@@ -71,8 +71,8 @@ export function emailBoasVindas(nome: string) {
   const corpo = `
 <h1 style="margin:0 0 12px;font-family:${FONTE};font-size:26px;line-height:1.2;font-weight:800;color:#121212;">Boas-vindas${nome ? `, ${esc(nome)}` : ""}!</h1>
 <p style="margin:0 0 20px;">O Daily Paper junta as notícias dos sites que você escolhe num só lugar, com o texto limpo
-(sem anúncios nem pop-ups) e um resumo feito por IA de cada matéria. Uma vez por dia, ele também manda
-um resumo por e-mail com o que de mais recente chegou.</p>
+(sem anúncios nem pop-ups) e mostra o que está em alta. Uma vez por dia, ele manda por e-mail as notícias
+mais relevantes, resumidas por IA.</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 ${passo(1, "Siga suas fontes", "Escolha entre quase mil veículos do Brasil e de fora, por tema ou região, ou cole o endereço de qualquer site. Não precisa saber o que é RSS.")}
 ${passo(2, "Organize em coleções", "Agrupe as fontes por assunto (Tecnologia, Minas, Esportes...). Cada coleção vira um feed só dela.")}

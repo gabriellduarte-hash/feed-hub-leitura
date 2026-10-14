@@ -15,15 +15,15 @@ const AVISOS: Record<string, { texto: string; modo: "entrar" | "esqueci" }> = {
 const PASSOS: { titulo: string; texto: string }[] = [
   { titulo: "Siga suas fontes", texto: "Quase mil veículos do Brasil e de fora, por tema ou região. Ou cole o endereço de qualquer site: não precisa saber o que é RSS." },
   { titulo: "Organize em coleções", texto: "Agrupe as fontes por assunto. Cada coleção vira um feed só dela." },
-  { titulo: "Leia sem distração", texto: "Cada notícia abre com um resumo e o texto completo, sem anúncios no meio." },
+  { titulo: "Leia sem distração", texto: "Cada notícia abre com o texto completo, sem anúncios no meio." },
   { titulo: "Receba o resumo do dia", texto: "As notícias mais recentes no seu e-mail, no horário que você escolher." },
 ];
 
 const RECURSOS: { icone: NomeIcone; titulo: string; texto: string }[] = [
   { icone: "globo", titulo: "Quase mil fontes", texto: "Veículos nacionais, regionais de todos os estados e internacionais." },
-  { icone: "ia", titulo: "Resumo em português", texto: "Cada matéria ganha um resumo feito por IA, até as escritas em inglês." },
+  { icone: "tendencia", titulo: "O que está em alta", texto: "As histórias que mais sites estão contando agora, juntas no topo do seu feed." },
   { icone: "check", titulo: "Leitura limpa", texto: "Sem anúncios, pop-ups ou avisos de cookies no meio do texto." },
-  { icone: "enviar", titulo: "Resumo por e-mail", texto: "As 10 notícias mais recentes do dia, e você pode compartilhar com até 10 pessoas." },
+  { icone: "enviar", titulo: "Resumo por e-mail", texto: "As 10 notícias mais relevantes do dia, resumidas por IA. Dá para compartilhar com até 10 pessoas." },
   { icone: "camadas", titulo: "Coleções", texto: "Acompanhe cada assunto separado: Tecnologia, Economia, sua cidade..." },
   { icone: "marcador", titulo: "Ler mais tarde", texto: "Guarde o que interessa e volte quando tiver tempo, no computador ou no celular." },
 ];
@@ -79,14 +79,14 @@ export default async function EntradaPage(props: PageProps<"/login">) {
         <section className="mx-auto grid max-w-[1080px] items-center gap-12 px-4 pt-14 pb-20 sm:px-6 md:grid-cols-[1.1fr_1fr] md:pt-24">
           <div className="animate-fade-up flex flex-col gap-6">
             <p className="text-[11px] font-bold tracking-[0.2em] text-text-muted uppercase">
-              <span className="text-accent">●</span>&nbsp; Leitor de notícias com resumo por IA
+              <span className="text-accent">●</span>&nbsp; Leitor de notícias com resumo diário por IA
             </p>
             <h1 className="text-[34px] leading-[1.08] font-extrabold tracking-tight text-balance sm:text-[46px]">
               Suas notícias, resumidas e num só lugar.
             </h1>
             <p className="max-w-[520px] text-[15px] leading-relaxed text-text-secondary">
-              Siga os sites que você lê, do Brasil e de fora. O Daily Paper junta tudo, tira os anúncios e resume cada
-              matéria em português. Uma vez por dia, o mais recente chega no seu e-mail.
+              Siga os sites que você lê, do Brasil e de fora. O Daily Paper junta tudo, tira os anúncios e mostra o que
+              está em alta. Uma vez por dia, as notícias mais relevantes chegam resumidas no seu e-mail.
             </p>
             <div className="flex flex-wrap gap-3">
               <BotaoEntrar

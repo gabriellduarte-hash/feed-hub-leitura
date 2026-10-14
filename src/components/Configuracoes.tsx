@@ -598,7 +598,7 @@ function FormResumo({
   return (
     <>
       <form onSubmit={salvar} className="flex flex-col gap-8">
-        <Grupo titulo="Resumo diário por e-mail" descricao="Um e-mail por dia com o que chegou desde o anterior: as 10 notícias mais recentes, resumidas, e mais algumas manchetes.">
+        <Grupo titulo="Resumo diário por e-mail" descricao="Um e-mail por dia com as notícias das últimas 12 horas: as 10 mais relevantes (as histórias que mais sites estão contando), resumidas por IA, e mais algumas manchetes.">
           <Chave
             rotulo="Receber o resumo diário"
             ligado={config.ativo}
