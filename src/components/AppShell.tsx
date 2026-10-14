@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { faviconDe } from "@/lib/fonte";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
@@ -13,11 +13,11 @@ import { abrirConfiguracoes, Configuracoes, estiloAvatar } from "./Configuracoes
 import { Toaster } from "./Toast";
 import { BarraDeProgresso } from "./BarraDeProgresso";
 import { ConviteInstalar } from "./ConviteInstalar";
+import { ProvedorSeguindo } from "./Seguindo";
 
 // Coleções, fontes e perfil, pra páginas que mostram a mesma coisa que o
 // menu lateral (no celular, a página Feeds) sem buscar tudo de novo
 const DadosApp = createContext<DadosSidebar | null>(null);
-const MarcarVisitadas = createContext<(fonteIds: string[]) => void>(() => {});
 
 export function useDadosApp() {
   const dados = useContext(DadosApp);
@@ -25,35 +25,7 @@ export function useDadosApp() {
   return dados;
 }
 
-/** Zera o contador de novas dessas fontes no menu (RegistrarVisita). */
-export function useMarcarVisitadas() {
-  return useContext(MarcarVisitadas);
-}
-
-/** Os mesmos dados, com as fontes visitadas agora valendo zero novas. */
-function descontarVisitadas(dados: DadosSidebar, visitadas: Set<string>): DadosSidebar {
-  if (visitadas.size === 0) return dados;
-  const colecoes = dados.colecoes.map((c) => {
-    const fontes = c.fontes.map((f) => (visitadas.has(f.id) ? { ...f, novas: 0 } : f));
-    return { ...c, fontes, novas: fontes.reduce((soma, f) => soma + f.novas, 0) };
-  });
-  return { ...dados, colecoes, totalNovas: colecoes.reduce((soma, c) => soma + c.novas, 0) };
-}
-
-export function AppShell({ dados: dadosDoServidor, children }: { dados: DadosSidebar; children: React.ReactNode }) {
-  // Visitas desta sessão de navegação. Quando o servidor manda dados novos
-  // (depois de marcar como lido, por exemplo), eles já vêm com as visitas
-  // gravadas no banco, então a lista recomeça vazia.
-  const [visitas, setVisitas] = useState({ base: dadosDoServidor, fontes: new Set<string>() });
-  if (visitas.base !== dadosDoServidor) setVisitas({ base: dadosDoServidor, fontes: new Set() });
-  const dados = useMemo(() => descontarVisitadas(dadosDoServidor, visitas.fontes), [dadosDoServidor, visitas.fontes]);
-  const marcarVisitadas = useCallback((ids: string[]) => {
-    setVisitas((atual) => {
-      if (ids.every((id) => atual.fontes.has(id))) return atual;
-      return { ...atual, fontes: new Set([...atual.fontes, ...ids]) };
-    });
-  }, []);
-
+export function AppShell({ dados, children }: { dados: DadosSidebar; children: React.ReactNode }) {
   const [valorRecolhido, setValorRecolhido] = useLocalStorage("sidebar-recolhida", "0");
   const recolhido = valorRecolhido === "1";
   const [irParaAberto, setIrParaAberto] = useState(false);
@@ -75,7 +47,7 @@ export function AppShell({ dados: dadosDoServidor, children }: { dados: DadosSid
 
   return (
     <DadosApp.Provider value={dados}>
-    <MarcarVisitadas.Provider value={marcarVisitadas}>
+    <ProvedorSeguindo inicial={dados.seguindo}>
     <div
       className="flex h-[100dvh] bg-background"
       // O leitor de artigos centraliza no espaço à direita do menu: ele lê
@@ -106,7 +78,7 @@ export function AppShell({ dados: dadosDoServidor, children }: { dados: DadosSid
         <BarraDeProgresso />
       </Suspense>
     </div>
-    </MarcarVisitadas.Provider>
+    </ProvedorSeguindo>
     </DadosApp.Provider>
   );
 }
@@ -139,7 +111,13 @@ function BarraAbasMobile({ dados }: { dados: DadosSidebar }) {
   return (
     <nav className="flex flex-shrink-0 items-stretch justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
       <AbaMobile href="/feeds" icone="camadas" rotulo="Feeds" ativo={pathname.startsWith("/feeds") || pathname === "/fontes"} />
-      <AbaMobile href="/buscar" icone="buscar" rotulo="Buscar" ativo={pathname.startsWith("/buscar")} />
+      {/* Buscar inclui Lidos recentemente (abas no topo das duas páginas) */}
+      <AbaMobile
+        href="/buscar"
+        icone="buscar"
+        rotulo="Buscar"
+        ativo={pathname.startsWith("/buscar") || pathname.startsWith("/lidos-recentemente")}
+      />
       <Link
         href="/"
         aria-current={noFeed ? "page" : undefined}
@@ -152,7 +130,7 @@ function BarraAbasMobile({ dados }: { dados: DadosSidebar }) {
       <AbaMobile href="/ler-mais-tarde" icone="marcador" rotulo="Salvos" ativo={pathname.startsWith("/ler-mais-tarde")} />
       <button
         type="button"
-        onClick={() => abrirConfiguracoes("geral")}
+        onClick={() => abrirConfiguracoes()}
         className="flex w-16 flex-col items-center gap-1 pb-2 text-[10px] font-medium text-text-muted"
       >
         <span className="h-[2px] w-5" />
@@ -197,6 +175,7 @@ function IrPara({ dados, onFechar }: { dados: DadosSidebar; onFechar: () => void
   const destinos = useMemo<Destino[]>(
     () => [
       { rotulo: "Hoje", href: "/", icone: "casa" },
+      { rotulo: "Seguindo", href: "/?aba=seguindo", icone: "tendencia" },
       { rotulo: "Todos", href: "/feeds/todos", icone: "camadas" },
       { rotulo: "Ler mais tarde", href: "/ler-mais-tarde", icone: "marcador" },
       { rotulo: "Lidos recentemente", href: "/lidos-recentemente", icone: "relogio" },

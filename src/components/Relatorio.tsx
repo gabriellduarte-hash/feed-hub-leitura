@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 /* Painéis da página Relatórios (app/(app)/relatorios): números do
  * período, rankings em barra (uma série, cor única, valor na ponta),
  * colunas por hora (aviso no hover/foco e tabela pra leitor de tela) e
@@ -33,6 +35,7 @@ const NOMES_DE_ORIGEM: Record<string, string> = {
   busca: "Busca",
   salvos: "Ler mais tarde",
   lidos: "Lidos recentemente",
+  seguindo: "Seguindo",
   catalogo: "Catálogo",
   web: "Busca na web",
   link: "Link colado",
@@ -124,6 +127,94 @@ export function PaineisDoRelatorio({ r }: { r: Relatorio }) {
       <Painel titulo="Coleções criadas" nota="Nomes que as pessoas dão às coleções: sinal de interesse.">
         <Barras itens={r.colecoes} />
       </Painel>
+    </div>
+  );
+}
+
+export type ParRespondido = { faixa: string; juntou: boolean; peso: number; resposta: "mesma" | "diferente" | "nao_sei" };
+
+const FAIXAS = ["0-40", "40-50", "50-58", "58-65", "65-75", "75-100"];
+const porcento = (parte: number, total: number) => (total > 0 ? `${Math.round((parte / total) * 100)}%` : "—");
+
+/** Fase 2 sem IA (sql/045): a amostra de pares marcada à mão diz se o
+ * agrupamento acerta, e os temas e nomes mais seguidos. Montado na página
+ * (não vem do relatorio_uso). */
+export function PaineisDoAgrupamento({
+  pares,
+  pendentes,
+  seguidos,
+}: {
+  pares: ParRespondido[];
+  pendentes: number;
+  seguidos: Item[];
+}) {
+  const respondidos = pares.filter((p) => p.resposta !== "nao_sei");
+  // peso: quantos pares da janela cada um representa (o sorteio pega o
+  // mesmo tanto de cada faixa, e as faixas têm tamanhos muito diferentes)
+  let vp = 0,
+    fp = 0,
+    fn = 0;
+  for (const p of respondidos) {
+    const mesma = p.resposta === "mesma";
+    if (p.juntou && mesma) vp += p.peso;
+    else if (p.juntou) fp += p.peso;
+    else if (mesma) fn += p.peso;
+  }
+  return (
+    <div className="flex flex-col gap-12 border-t border-border pt-12 pb-10">
+      <div className="grid gap-12 lg:grid-cols-2">
+        <Painel
+          titulo="Agrupamento de histórias"
+          nota="Pela amostra de pares marcada à mão, com as regras da hora do sorteio. Pra testar outros pesos: agrupar.py --medir."
+        >
+          <div className="grid grid-cols-3 gap-3">
+            <Numero rotulo="Marcados" valor={respondidos.length} detalhe={`${numero(pendentes)} pra marcar`} />
+            <NumeroTexto rotulo="Precisão" valor={porcento(vp, vp + fp)} detalhe="das que juntou, eram a mesma" />
+            <NumeroTexto rotulo="Cobertura" valor={porcento(vp, vp + fn)} detalhe="das que eram a mesma, juntou" />
+          </div>
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-border text-left text-[11px] text-text-muted">
+                <th className="py-2 font-normal">Nota</th>
+                <th className="py-2 text-right font-normal">Marcados</th>
+                <th className="py-2 text-right font-normal">Mesma história</th>
+              </tr>
+            </thead>
+            <tbody>
+              {FAIXAS.map((faixa) => {
+                const daFaixa = respondidos.filter((p) => p.faixa === faixa);
+                const mesmas = daFaixa.filter((p) => p.resposta === "mesma").length;
+                return (
+                  <tr key={faixa} className="border-b border-border/60">
+                    <td className="py-2 text-text-secondary tabular-nums">{faixa}</td>
+                    <td className="py-2 text-right text-text-muted tabular-nums">{numero(daFaixa.length)}</td>
+                    <td className="py-2 text-right font-semibold text-foreground tabular-nums">{porcento(mesmas, daFaixa.length)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <Link
+            href="/relatorios/pares"
+            className="w-fit rounded-md bg-foreground px-4 py-2 text-[13px] font-semibold text-background transition-colors hover:bg-accent"
+          >
+            Marcar pares
+          </Link>
+        </Painel>
+        <Painel titulo="Temas e nomes mais seguidos" nota="Quantas pessoas seguem cada um (aba Seguindo).">
+          <Barras itens={seguidos} />
+        </Painel>
+      </div>
+    </div>
+  );
+}
+
+function NumeroTexto({ rotulo, valor, detalhe }: { rotulo: string; valor: string; detalhe?: string }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-4">
+      <span className="text-[11px] text-text-muted">{rotulo}</span>
+      <span className="text-[26px] leading-none font-extrabold tracking-tight text-foreground tabular-nums">{valor}</span>
+      {detalhe && <span className="text-[11px] text-text-secondary">{detalhe}</span>}
     </div>
   );
 }

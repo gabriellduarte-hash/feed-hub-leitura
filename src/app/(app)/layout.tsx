@@ -3,6 +3,7 @@ import { hostDe, nomeDaFonte } from "@/lib/fonte";
 import { AppShell } from "@/components/AppShell";
 import { ehAdmin } from "@/lib/admin";
 import type { ColecaoSidebar } from "@/components/Sidebar";
+import type { ItemSeguido } from "@/lib/seguir";
 
 type TopicoComFontes = {
   id: string;
@@ -19,15 +20,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     },
     { data: topicos },
     { data: contagens },
+    { data: seguindo },
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase
       .from("topics")
       .select("id, name, sources(id, name, url, favorite, topic_id)")
       .order("created_at"),
-    // "novas desde a última visita" (sql/038): zera ao abrir a fonte, a
-    // coleção ou o feed todo (RegistrarVisita)
+    // novas de hoje que a pessoa ainda não leu (sql/045): sobe a cada
+    // coleta, desce ao ler e zera à meia-noite (Brasília)
     supabase.from("novas_por_fonte").select("source_id, novas"),
+    // temas e nomes seguidos (sql/045); sem a tabela, vem vazio
+    supabase.from("seguindo").select("tipo, chave, rotulo").order("criado_em"),
   ]);
 
   const novasPorFonte = new Map((contagens ?? []).map((c) => [c.source_id as string, c.novas as number]));
@@ -58,6 +62,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         totalNovas: colecoes.reduce((soma, c) => soma + c.novas, 0),
         email: user?.email ?? "",
         admin: ehAdmin(user?.email),
+        seguindo: (seguindo ?? []) as ItemSeguido[],
         // nome/sobrenome/cor ficam nos metadados do usuário (Supabase Auth),
         // editados em Configurações > Perfil
         perfil: {

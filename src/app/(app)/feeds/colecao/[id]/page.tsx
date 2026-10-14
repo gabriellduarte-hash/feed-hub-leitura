@@ -5,7 +5,6 @@ import { ArticleList } from "@/components/ArticleList";
 import { FeedActions } from "@/components/FeedActions";
 import { Conteudo, FeedComSugestoes, Vazio } from "@/components/FeedLayout";
 import { PageHeader } from "@/components/PageHeader";
-import { RegistrarVisita } from "@/components/RegistrarVisita";
 
 export default async function ColecaoPage(props: PageProps<"/feeds/colecao/[id]">) {
   const { id } = await props.params;
@@ -28,7 +27,6 @@ export default async function ColecaoPage(props: PageProps<"/feeds/colecao/[id]"
 
   return (
     <Conteudo largo>
-      <RegistrarVisita escopo={{ tipo: "colecao", id }} />
       <PageHeader
         titulo={colecao.name}
         subtitulo={

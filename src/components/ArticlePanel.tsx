@@ -6,8 +6,10 @@ import type { ArtigoLista } from "@/lib/feed";
 import { faviconDe } from "@/lib/fonte";
 import { limparTexto } from "@/lib/limpar-texto";
 import { ResumoFormatado } from "@/lib/resumo";
+import { idDoItem, seguiveisDaNoticia } from "@/lib/seguir";
 import { Icon, type NomeIcone } from "./Icon";
 import { ItemMenu, Menu } from "./Menu";
+import { ChipSeguir } from "./Seguindo";
 import { mostrarToast } from "./Toast";
 
 type Estado = { lido: boolean; salvo: boolean };
@@ -131,6 +133,7 @@ export function ArticlePanel({
   }
 
   const blocos = formatar(limparTexto(a.content));
+  const seguiveis = seguiveisDaNoticia(a);
   const temTexto = blocos.length > 0 && a.content !== a.ai_summary;
 
   return (
@@ -296,6 +299,15 @@ export function ArticlePanel({
               <span className="font-semibold text-foreground">{a.author ?? a.fonteNome}</span>
               <span className="font-light text-text-muted">{a.dataCompleta}</span>
             </div>
+
+            {/* temas e nomes da notícia (sql/045): seguir manda as próximas pra aba Seguindo */}
+            {seguiveis.length > 0 && (
+              <div role="group" aria-label="Seguir temas e nomes desta notícia" className="mt-5 flex flex-wrap gap-2">
+                {seguiveis.map((item) => (
+                  <ChipSeguir key={idDoItem(item)} item={item} />
+                ))}
+              </div>
+            )}
 
             {a.ai_summary && (
               <section className="mt-10">

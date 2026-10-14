@@ -7,6 +7,7 @@ import { criarColecao } from "@/app/actions/fontes";
 import { marcarTudoComoLido } from "@/app/actions/artigos";
 import { createClient } from "@/lib/supabase/client";
 import { faviconDe } from "@/lib/fonte";
+import type { ItemSeguido } from "@/lib/seguir";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { ItemMenu, Menu, SeparadorMenu } from "./Menu";
@@ -40,6 +41,8 @@ export type DadosSidebar = {
   perfil: Perfil;
   /** Vê a página Relatórios (ADMIN_EMAILS) */
   admin?: boolean;
+  /** Temas e nomes que a pessoa segue (sql/045) */
+  seguindo: ItemSeguido[];
 };
 
 /* Item do menu: ícone grande + nome (aberto) ou só o ícone com dica (recolhido). */
@@ -519,7 +522,7 @@ function Contador({ valor, destaque = false }: { valor: number; destaque?: boole
   return (
     <span className="ml-auto flex w-10 flex-shrink-0 justify-end pr-2">
       <span
-        title={`${valor} ${valor === 1 ? "nova" : "novas"} desde a sua última visita`}
+        title={`${valor} ${valor === 1 ? "nova" : "novas"} hoje, ainda não ${valor === 1 ? "lida" : "lidas"}`}
         className={`rounded-md px-1.5 py-0.5 text-[11px] tracking-normal tabular-nums normal-case ${
           destaque ? "font-bold text-accent" : "text-text-muted"
         }`}

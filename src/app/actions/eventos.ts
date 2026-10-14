@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
  * relatório nunca mostra o que uma pessoa fez. Falhar aqui nunca pode
  * atrapalhar quem está lendo, então os erros são engolidos. */
 
-export type OrigemAbertura = "feed" | "explorar" | "trending" | "busca" | "salvos" | "lidos";
+export type OrigemAbertura = "feed" | "explorar" | "trending" | "busca" | "salvos" | "lidos" | "seguindo";
 
 const corta = (texto: string | null | undefined, maximo: number) => (texto ? texto.slice(0, maximo) : null);
 

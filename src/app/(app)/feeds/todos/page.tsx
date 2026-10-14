@@ -4,7 +4,6 @@ import { ArticleList } from "@/components/ArticleList";
 import { FeedActions } from "@/components/FeedActions";
 import { Conteudo, FeedComSugestoes, Vazio } from "@/components/FeedLayout";
 import { PageHeader } from "@/components/PageHeader";
-import { RegistrarVisita } from "@/components/RegistrarVisita";
 
 export default async function TodosPage() {
   const supabase = await createClient();
@@ -16,7 +15,6 @@ export default async function TodosPage() {
 
   return (
     <Conteudo largo>
-      <RegistrarVisita escopo={{ tipo: "todas" }} />
       <PageHeader titulo="Todos" acoes={<FeedActions escopo={{ tipo: "todos" }} naoLidos={naoLidos} />} />
       <FeedComSugestoes
         sugestoes={sugestoes}

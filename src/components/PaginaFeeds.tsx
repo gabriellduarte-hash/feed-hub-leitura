@@ -216,7 +216,7 @@ function Contador({ valor, destaque = false }: { valor: number; destaque?: boole
   if (valor <= 0) return null;
   return (
     <span
-      title={`${valor} ${valor === 1 ? "nova" : "novas"} desde a sua última visita`}
+      title={`${valor} ${valor === 1 ? "nova" : "novas"} hoje, ainda não ${valor === 1 ? "lida" : "lidas"}`}
       className={`px-2 text-[12px] tabular-nums ${destaque ? "font-bold text-accent" : "text-text-muted"}`}
     >
       {valor}

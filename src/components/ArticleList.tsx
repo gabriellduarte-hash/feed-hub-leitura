@@ -347,6 +347,18 @@ function Meta({ artigo, salvo }: { artigo: ArtigoLista; salvo: boolean }) {
         ·
       </span>
       <span className="font-light text-text-muted">{artigo.tempo}</span>
+      {/* aba Seguindo: quantos sites a mais deram a história e o que fez a notícia aparecer */}
+      {!!artigo.cobertura && (
+        <span className="font-light text-text-muted">
+          · +{artigo.cobertura} {artigo.cobertura === 1 ? "site" : "sites"}
+        </span>
+      )}
+      {artigo.motivo && (
+        <span className="flex min-w-0 items-center gap-1 font-semibold text-accent">
+          <Icon nome="check" tamanho={11} espessura={2.5} className="flex-shrink-0" />
+          <span className="truncate">{artigo.motivo}</span>
+        </span>
+      )}
       {salvo && (
         <span className="flex items-center text-accent" title="Em Ler mais tarde">
           <Icon nome="marcador" tamanho={12} preenchido />

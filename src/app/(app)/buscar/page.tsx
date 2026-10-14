@@ -5,6 +5,7 @@ import { ArticleList } from "@/components/ArticleList";
 import { Conteudo } from "@/components/FeedLayout";
 import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
+import { AbasBusca } from "@/components/AbasBusca";
 import { registrarBusca } from "@/lib/eventos";
 
 export default async function BuscarPage(props: PageProps<"/buscar">) {
@@ -18,6 +19,7 @@ export default async function BuscarPage(props: PageProps<"/buscar">) {
   return (
     <Conteudo>
       <PageHeader titulo="Buscar" />
+      <AbasBusca ativa="buscar" />
       <Form action="/buscar" className="group mb-10">
         <label className="flex h-12 items-center gap-3 rounded-lg border border-border bg-surface px-4 transition-colors focus-within:border-text-muted">
           <Icon nome="buscar" className="text-text-muted" />

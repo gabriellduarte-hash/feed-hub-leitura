@@ -20,11 +20,12 @@ import { Icon, type NomeIcone } from "./Icon";
 import type { Perfil } from "./Sidebar";
 import { mostrarToast } from "./Toast";
 
-/* Abrir de qualquer lugar: abrirConfiguracoes("perfil") */
+/* Abrir de qualquer lugar: abrirConfiguracoes("perfil"). Sem seção, o
+ * celular abre no menu (lista de seções) e o computador em "Geral". */
 const EVENTO = "feed:configuracoes";
 export type Secao = "geral" | "aparencia" | "perfil" | "acesso" | "resumo" | "atalhos" | "feedback" | "apoiar";
-export function abrirConfiguracoes(secao: Secao = "geral") {
-  window.dispatchEvent(new CustomEvent(EVENTO, { detail: secao }));
+export function abrirConfiguracoes(secao?: Secao) {
+  window.dispatchEvent(new CustomEvent(EVENTO, { detail: secao ?? null }));
 }
 
 /* Cores do avatar: o perfil guarda só o nome da cor */
@@ -55,54 +56,78 @@ const SECOES: { id: Secao; rotulo: string; icone: NomeIcone }[] = [
 type Colecao = { id: string; nome: string };
 
 export function Configuracoes({ email, perfil, colecoes }: { email: string; perfil: Perfil; colecoes: Colecao[] }) {
-  const [secao, setSecao] = useState<Secao | null>(null);
+  const [aberto, setAberto] = useState(false);
+  // null = no celular, o menu com a lista de seções; no computador, "Geral"
+  const [escolhida, setEscolhida] = useState<Secao | null>(null);
+  const secao = escolhida ?? "geral";
 
   useEffect(() => {
-    const aoAbrir = (e: Event) => setSecao((e as CustomEvent<Secao>).detail);
+    const aoAbrir = (e: Event) => {
+      setEscolhida((e as CustomEvent<Secao | null>).detail);
+      setAberto(true);
+    };
     window.addEventListener(EVENTO, aoAbrir);
     return () => window.removeEventListener(EVENTO, aoAbrir);
   }, []);
 
   useEffect(() => {
-    if (!secao) return;
-    const aoTeclar = (e: KeyboardEvent) => e.key === "Escape" && setSecao(null);
+    if (!aberto) return;
+    const aoTeclar = (e: KeyboardEvent) => e.key === "Escape" && setAberto(false);
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
-  }, [secao]);
+  }, [aberto]);
 
-  if (!secao) return null;
+  if (!aberto) return null;
+  const noMenu = escolhida === null;
+  const rotuloDaSecao = SECOES.find((s) => s.id === secao)?.rotulo;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center md:p-4" role="dialog" aria-modal aria-label="Configurações">
-      <div className="animate-aparece absolute inset-0 bg-overlay backdrop-blur-[2px]" onClick={() => setSecao(null)} />
+      <div className="animate-aparece absolute inset-0 bg-overlay backdrop-blur-[2px]" onClick={() => setAberto(false)} />
       <div className="animate-menu-in relative flex h-full w-full max-w-[960px] flex-col overflow-hidden bg-surface md:h-[min(700px,92vh)] md:flex-row md:rounded-lg md:border md:border-border shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]">
-        <nav className="sem-barra flex flex-shrink-0 gap-0.5 overflow-x-auto border-b border-border bg-sidebar p-2 pr-14 md:w-[240px] md:flex-col md:overflow-visible md:border-r md:border-b-0 md:p-3">
-          <div className="hidden px-3 pt-2 pb-4 text-[17px] font-bold tracking-tight text-foreground md:block">Configurações</div>
+        {/* Celular: o menu é a primeira tela, uma seção embaixo da outra;
+            ao tocar numa, ela ocupa a tela com "‹ Configurações" pra voltar.
+            Computador: menu na lateral e a seção do lado. */}
+        <nav
+          className={`flex-shrink-0 flex-col gap-0.5 overflow-y-auto bg-sidebar p-3 pt-4 md:flex md:w-[240px] md:overflow-visible md:border-r md:border-border ${
+            noMenu ? "flex flex-grow md:flex-grow-0" : "hidden"
+          }`}
+        >
+          <div className="px-3 pt-1 pb-4 text-[20px] font-bold tracking-tight text-foreground md:pt-2 md:text-[17px]">Configurações</div>
           {SECOES.map((s) => (
             <button
               key={s.id}
               type="button"
-              onClick={() => setSecao(s.id)}
-              className={`flex flex-shrink-0 items-center gap-2 rounded-md px-3 py-2 text-left text-[13px] whitespace-nowrap transition-colors md:gap-3 md:py-2.5 md:text-[14px] ${
-                secao === s.id ? "bg-surface-active font-semibold text-foreground" : "text-text-secondary hover:bg-surface-hover hover:text-foreground"
+              onClick={() => setEscolhida(s.id)}
+              className={`flex flex-shrink-0 items-center gap-3 rounded-md px-3 py-3.5 text-left text-[15px] transition-colors md:py-2.5 md:text-[14px] ${
+                !noMenu && secao === s.id
+                  ? "bg-surface-active font-semibold text-foreground"
+                  : noMenu && s.id === "geral"
+                    ? "text-text-secondary hover:bg-surface-hover hover:text-foreground md:bg-surface-active md:font-semibold md:text-foreground"
+                    : "text-text-secondary hover:bg-surface-hover hover:text-foreground"
               }`}
             >
               <Icon nome={s.icone} tamanho={18} />
-              {s.rotulo}
+              <span className="flex-grow">{s.rotulo}</span>
+              <Icon nome="chevronDireita" tamanho={16} className="text-text-muted md:hidden" />
             </button>
           ))}
         </nav>
 
-        <div className="flex-grow overflow-y-auto px-5 py-7 md:px-10 md:py-9">
-          <button
-            type="button"
-            onClick={() => setSecao(null)}
-            aria-label="Fechar"
-            className="absolute top-2 right-2 z-10 flex h-9 w-9 items-center justify-center rounded-md bg-sidebar text-text-muted transition hover:bg-surface-hover hover:text-foreground md:top-5 md:right-5 md:bg-surface"
-          >
-            <Icon nome="fechar" />
-          </button>
-          <div key={secao} className="animate-fade-up flex max-w-[560px] flex-col gap-10">
+        <div className={`flex-grow flex-col overflow-y-auto md:flex ${noMenu ? "hidden" : "flex"}`}>
+          {/* celular: volta pro menu */}
+          <div className="sticky top-0 z-10 flex h-14 flex-shrink-0 items-center border-b border-border bg-surface px-2 md:hidden">
+            <button
+              type="button"
+              onClick={() => setEscolhida(null)}
+              className="flex h-9 items-center gap-1 rounded-md px-2 text-[14px] font-medium text-text-secondary transition-colors active:bg-surface-hover"
+            >
+              <Icon nome="chevronEsquerda" tamanho={18} />
+              Configurações
+            </button>
+            <span className="sr-only">{rotuloDaSecao}</span>
+          </div>
+          <div key={secao} className="animate-fade-up flex max-w-[560px] flex-col gap-10 px-5 py-7 md:px-10 md:py-9">
             {secao === "geral" && <SecaoGeral />}
             {secao === "aparencia" && <SecaoAparencia />}
             {secao === "perfil" && <SecaoPerfil email={email} perfil={perfil} />}
@@ -113,6 +138,15 @@ export function Configuracoes({ email, perfil, colecoes }: { email: string; perf
             {secao === "apoiar" && <ApoiarProjeto titulo="Apoie o Daily Paper" />}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setAberto(false)}
+          aria-label="Fechar"
+          className="absolute top-2.5 right-2 z-20 flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition hover:bg-surface-hover hover:text-foreground md:top-5 md:right-5"
+        >
+          <Icon nome="fechar" />
+        </button>
       </div>
     </div>
   );
@@ -598,7 +632,7 @@ function FormResumo({
   return (
     <>
       <form onSubmit={salvar} className="flex flex-col gap-8">
-        <Grupo titulo="Resumo diário por e-mail" descricao="Um e-mail por dia com as notícias das últimas 12 horas: as 10 mais relevantes (as histórias que mais sites estão contando), resumidas por IA, e mais algumas manchetes.">
+        <Grupo titulo="Resumo diário por e-mail" descricao="Um e-mail por dia com as notícias das últimas 12 horas: as 10 mais relevantes (as histórias que mais sites estão contando, e o que você segue na aba Seguindo), resumidas por IA, e mais algumas manchetes.">
           <Chave
             rotulo="Receber o resumo diário"
             ligado={config.ativo}

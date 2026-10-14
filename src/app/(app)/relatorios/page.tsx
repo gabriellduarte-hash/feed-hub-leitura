@@ -5,7 +5,7 @@ import { clienteAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { Conteudo } from "@/components/FeedLayout";
 import { PageHeader } from "@/components/PageHeader";
-import { PaineisDoRelatorio, type Relatorio } from "@/components/Relatorio";
+import { PaineisDoAgrupamento, PaineisDoRelatorio, type ParRespondido, type Relatorio } from "@/components/Relatorio";
 
 /* Relatórios de uso (sql/043): só pra quem está em ADMIN_EMAILS. Tudo
  * agregado pela função relatorio_uso, chamada com a chave secreta: a
@@ -23,7 +23,25 @@ export default async function RelatoriosPage(props: PageProps<"/relatorios">) {
   const params = await props.searchParams;
   const dias = PERIODOS.includes(Number(params.dias)) ? Number(params.dias) : 30;
   const admin = clienteAdmin();
-  const { data, error } = admin ? await admin.rpc("relatorio_uso", { p_dias: dias }) : { data: null, error: true };
+  const [{ data, error }, { data: pares }, { count: pendentes }, { data: seguindo }] = admin
+    ? await Promise.all([
+        admin.rpc("relatorio_uso", { p_dias: dias }),
+        // fase 2 (sql/045): amostra marcada à mão e o que as pessoas seguem
+        admin.from("pares_avaliados").select("faixa, juntou, peso, resposta").not("resposta", "is", null),
+        admin.from("pares_avaliados").select("id", { count: "exact", head: true }).is("resposta", null),
+        admin.from("seguindo").select("tipo, chave, rotulo"),
+      ])
+    : [{ data: null, error: true }, { data: null }, { count: 0 }, { data: null }];
+
+  // quantas pessoas seguem cada tema/nome (só o total: ninguém aparece)
+  const contagem = new Map<string, { nome: string; total: number }>();
+  for (const s of (seguindo ?? []) as { tipo: string; chave: string; rotulo: string }[]) {
+    const id = `${s.tipo}:${s.chave}`;
+    const atual = contagem.get(id) ?? { nome: s.tipo === "tema" ? `#${s.rotulo.toLowerCase()}` : s.rotulo, total: 0 };
+    atual.total += 1;
+    contagem.set(id, atual);
+  }
+  const seguidos = [...contagem.values()].sort((a, b) => b.total - a.total).slice(0, 15);
 
   return (
     <Conteudo largo>
@@ -55,6 +73,7 @@ export default async function RelatoriosPage(props: PageProps<"/relatorios">) {
       ) : (
         <PaineisDoRelatorio r={data as Relatorio} />
       )}
+      {admin && <PaineisDoAgrupamento pares={(pares ?? []) as ParRespondido[]} pendentes={pendentes ?? 0} seguidos={seguidos} />}
     </Conteudo>
   );
 }

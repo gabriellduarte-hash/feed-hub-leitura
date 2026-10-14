@@ -2,6 +2,11 @@ import { consertarAcentos } from "./limpar-texto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hostDe, nomeDaFonte } from "./fonte";
 
+/** Um nome da notícia, achado pelo spaCy no coletor (sql/045): pessoa,
+ * organização, lugar ou outro (obra, produto, evento). A chave é o nome
+ * normalizado, a mesma que o "seguir" grava. */
+export type Entidade = { nome: string; chave: string; tipo: string };
+
 export type ArtigoLista = {
   id: string;
   title: string;
@@ -26,6 +31,11 @@ export type ArtigoLista = {
   origem: "usuario" | "catalogo";
   /** Trending: quantas outras fontes publicaram a mesma história */
   cobertura?: number;
+  /** Subassuntos (taxonomia do coletor) e nomes: o que dá pra seguir */
+  temas?: string[];
+  entidades?: Entidade[];
+  /** Aba Seguindo: o que a pessoa segue que apareceu na notícia */
+  motivo?: string;
 };
 
 type LinhaArtigo = {
@@ -43,6 +53,8 @@ type LinhaArtigo = {
   fonte_nome: string | null;
   fonte_url: string;
   topic_id: string;
+  temas?: string[] | null;
+  entidades?: Entidade[] | null;
 };
 
 // View artigos_do_usuario (sql/038): as notícias dos feeds que a pessoa
@@ -50,7 +62,7 @@ type LinhaArtigo = {
 // pode ser seguido por várias pessoas; a notícia é uma só.
 const VIEW_ARTIGOS = "artigos_do_usuario";
 const SELECT_ARTIGO =
-  "id, title, url, author, content, ai_summary, category, image_url, published_at, collected_at, source_id, fonte_nome, fonte_url, topic_id";
+  "id, title, url, author, content, ai_summary, category, image_url, published_at, collected_at, source_id, fonte_nome, fonte_url, topic_id, temas, entidades";
 
 const FUSO = "America/Sao_Paulo";
 
@@ -115,6 +127,8 @@ export type FiltroPagina = {
   /** Lista notícias do catálogo (aba Explorar) em vez dos artigos do usuário */
   catalogo?: boolean;
   categoria?: string;
+  /** Aba Seguindo: notícias dos temas e nomes que a pessoa segue */
+  seguindo?: boolean;
 };
 
 export const TAMANHO_PAGINA = 30;
@@ -184,6 +198,8 @@ async function enriquecer(supabase: SupabaseClient, linhas: LinhaArtigo[]) {
       lido: setLidos.has(l.id),
       salvo: setSalvos.has(l.id),
       origem: "usuario" as const,
+      temas: l.temas ?? [],
+      entidades: l.entidades ?? [],
     };
   });
 }
@@ -200,9 +216,11 @@ export type Secao = { titulo: string; artigos: ArtigoLista[] };
 
 /** Uma página do feed: pede um item a mais só pra saber se ainda tem próxima. */
 export async function buscarPagina(supabase: SupabaseClient, filtro: FiltroPagina, offset = 0) {
-  const artigos = filtro.catalogo
-    ? await buscarNoticiasDoCatalogo(supabase, filtro.categoria, offset, TAMANHO_PAGINA + 1)
-    : await buscarArtigos(supabase, { fonteId: filtro.fonteId, topicoId: filtro.topicoId, offset, limite: TAMANHO_PAGINA + 1 });
+  const artigos = filtro.seguindo
+    ? await buscarSeguidas(supabase, offset, TAMANHO_PAGINA + 1)
+    : filtro.catalogo
+      ? await buscarNoticiasDoCatalogo(supabase, filtro.categoria, offset, TAMANHO_PAGINA + 1)
+      : await buscarArtigos(supabase, { fonteId: filtro.fonteId, topicoId: filtro.topicoId, offset, limite: TAMANHO_PAGINA + 1 });
   return { artigos: artigos.slice(0, TAMANHO_PAGINA), temMais: artigos.length > TAMANHO_PAGINA };
 }
 
@@ -218,6 +236,8 @@ type LinhaCatalogo = {
   collected_at: string;
   /** Categoria da notícia, dada pela IA (sql/041); sem ela, vale a do site */
   category: string | null;
+  temas: string[] | null;
+  entidades: Entidade[] | null;
   feed_catalog: { id: string; name: string; url: string; category: string };
 };
 
@@ -232,7 +252,7 @@ async function buscarNoticiasDoCatalogo(
   let consulta = supabase
     .from("catalog_articles")
     .select(
-      "id, title, url, author, content, ai_summary, image_url, published_at, collected_at, category, feed_catalog!inner(id, name, url, category)",
+      "id, title, url, author, content, ai_summary, image_url, published_at, collected_at, category, temas, entidades, feed_catalog!inner(id, name, url, category)",
     )
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("id")
@@ -262,6 +282,75 @@ async function buscarNoticiasDoCatalogo(
       lido: false,
       salvo: false,
       origem: "catalogo" as const,
+      temas: l.temas ?? [],
+      entidades: l.entidades ?? [],
+    };
+  });
+}
+
+type LinhaSeguida = {
+  id: string;
+  title: string;
+  url: string;
+  author: string | null;
+  content: string | null;
+  ai_summary: string | null;
+  category: string | null;
+  image_url: string | null;
+  published_at: string | null;
+  collected_at: string;
+  fonte_id: string;
+  fonte_nome: string | null;
+  fonte_url: string;
+  origem: "usuario" | "catalogo";
+  temas: string[] | null;
+  entidades: Entidade[] | null;
+  cobertura: number;
+  motivo: string | null;
+};
+
+/** Aba Seguindo (função noticias_seguidas, sql/045): notícias dos últimos
+ * 7 dias com um tema ou nome que a pessoa segue, das fontes dela e do
+ * catálogo, uma por história. As das fontes dela vêm com lido/salvo. */
+async function buscarSeguidas(supabase: SupabaseClient, offset: number, limite: number): Promise<ArtigoLista[]> {
+  const { data, error } = await supabase.rpc("noticias_seguidas", { p_limite: limite, p_offset: offset });
+  if (error || !data) return [];
+  const linhas = data as LinhaSeguida[];
+  const minhas = linhas.filter((l) => l.origem === "usuario").map((l) => l.id);
+  const [{ data: lidos }, { data: salvos }] = minhas.length
+    ? await Promise.all([
+        supabase.from("read_articles").select("article_id").in("article_id", minhas),
+        supabase.from("saved_articles").select("article_id").in("article_id", minhas),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const setLidos = new Set((lidos ?? []).map((r) => r.article_id as string));
+  const setSalvos = new Set((salvos ?? []).map((r) => r.article_id as string));
+  const agora = new Date();
+  return linhas.map((l) => {
+    const data = dataDoArtigo(l);
+    return {
+      id: l.id,
+      title: consertarAcentos(l.title),
+      url: l.url,
+      author: l.author,
+      content: l.content,
+      ai_summary: l.ai_summary,
+      category: l.category,
+      image_url: l.image_url,
+      fonteId: l.fonte_id,
+      fonteNome: l.origem === "usuario" ? nomeDaFonte(l.fonte_nome, l.fonte_url) : (l.fonte_nome ?? hostDe(l.fonte_url)),
+      fonteHost: hostDe(l.fonte_url),
+      tempo: tempoRelativo(data, agora),
+      dataCompleta: dataCompleta(data),
+      dia: diaLocal(data),
+      rotuloDia: rotuloDoDia(data, agora),
+      lido: setLidos.has(l.id),
+      salvo: setSalvos.has(l.id),
+      origem: l.origem,
+      cobertura: l.cobertura,
+      temas: l.temas ?? [],
+      entidades: l.entidades ?? [],
+      motivo: l.motivo ?? undefined,
     };
   });
 }
@@ -282,6 +371,8 @@ type LinhaTrending = {
   fonte_url: string;
   categoria: string;
   cobertura: number;
+  temas?: string[] | null;
+  entidades?: Entidade[] | null;
 };
 
 /** Trending (função trending, sql/044, sem IA): as histórias das últimas
@@ -318,6 +409,8 @@ export async function buscarTrending(supabase: SupabaseClient, categoria?: strin
       salvo: false,
       origem: "catalogo" as const,
       cobertura: l.cobertura,
+      temas: l.temas ?? [],
+      entidades: l.entidades ?? [],
     };
   });
 }
@@ -420,7 +513,7 @@ export async function buscarSugestoes(
 
 /** Não lidos (janela de 30 dias, via view unread_counts) de um conjunto de
  * fontes — ou de todas. É o número do "marcar tudo como lido"; o do menu
- * é o de novas desde a última visita (view novas_por_fonte, no layout). */
+ * é o das novas de hoje ainda não lidas (view novas_por_fonte, no layout). */
 export async function contarNaoLidos(supabase: SupabaseClient, fonteIds?: string[]) {
   let consulta = supabase.from("unread_counts").select("nao_lidos");
   if (fonteIds) {

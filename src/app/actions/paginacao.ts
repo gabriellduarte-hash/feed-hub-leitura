@@ -13,6 +13,7 @@ export async function carregarMaisArtigos(filtro: FiltroPagina, offset: number) 
   if (filtro.fonteId && UUID.test(filtro.fonteId)) seguro.fonteId = filtro.fonteId;
   if (filtro.topicoId && UUID.test(filtro.topicoId)) seguro.topicoId = filtro.topicoId;
   if (filtro.catalogo === true) seguro.catalogo = true;
+  if (filtro.seguindo === true) seguro.seguindo = true;
   if (typeof filtro.categoria === "string" && filtro.categoria.length <= 40) seguro.categoria = filtro.categoria;
   const inicio = Number.isInteger(offset) && offset > 0 ? offset : 0;
 
