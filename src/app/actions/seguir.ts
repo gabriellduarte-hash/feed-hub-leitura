@@ -119,3 +119,27 @@ export async function sugerirParaSeguir(busca: string): Promise<SugestaoSeguir[]
     .map((t) => ({ tipo: t.tipo, chave: t.chave, rotulo: t.rotulo, detalhe: t.detalhe, noticias: t.noticias }));
   return [...temas.slice(0, palavras.length ? 5 : 6), ...((achados ?? []) as SugestaoSeguir[])].slice(0, palavras.length ? 10 : 18);
 }
+
+/** Nomes que surgiram: muito mais citados nas últimas 24h do que nos dias
+ * antes (sugestoes_seguir.em_alta, sql/048; o coletor calcula). */
+export async function surgindoAgora(): Promise<SugestaoSeguir[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("sugestoes_seguir")
+    .select("tipo, chave, rotulo, detalhe, noticias")
+    .not("em_alta", "is", null)
+    .order("em_alta", { ascending: false })
+    .limit(10);
+  return (data ?? []) as SugestaoSeguir[];
+}
+
+/** Os temas e nomes que mais aparecem junto de um tema ou nome nos
+ * últimos 7 dias (função relacionados, sql/048): Marvel -> Super-heróis. */
+export async function relacionadosA(item: Pick<ItemSeguido, "tipo" | "chave">): Promise<SugestaoSeguir[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("relacionados", { p_tipo: item.tipo, p_chave: item.chave });
+  return ((data ?? []) as { tipo: "tema" | "nome"; chave: string; rotulo: string; noticias: number }[]).map((r) => ({
+    ...r,
+    detalhe: null,
+  }));
+}

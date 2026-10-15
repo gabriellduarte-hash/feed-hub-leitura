@@ -551,17 +551,17 @@ export async function buscarSugestoes(
   }));
 }
 
-/** Não lidos (janela de 30 dias, via view unread_counts) de um conjunto de
- * fontes — ou de todas. É o número do "marcar tudo como lido"; o do menu
- * é o das novas de hoje ainda não lidas (view novas_por_fonte, no layout). */
+/** Novas de hoje ainda não lidas (view novas_por_fonte, sql/045: zera à
+ * meia-noite) de um conjunto de fontes — ou de todas. O mesmo número das
+ * coleções no menu, pro Início, Todos, coleção e fonte baterem com ele. */
 export async function contarNaoLidos(supabase: SupabaseClient, fonteIds?: string[]) {
-  let consulta = supabase.from("unread_counts").select("nao_lidos");
+  let consulta = supabase.from("novas_por_fonte").select("novas");
   if (fonteIds) {
     if (fonteIds.length === 0) return 0;
     consulta = consulta.in("source_id", fonteIds);
   }
   const { data } = await consulta;
-  return (data ?? []).reduce((soma, c) => soma + (c.nao_lidos as number), 0);
+  return (data ?? []).reduce((soma, c) => soma + (c.novas as number), 0);
 }
 
 export function categoriasPredominantes(artigos: ArtigoLista[], limite = 2) {

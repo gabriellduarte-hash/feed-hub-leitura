@@ -34,11 +34,16 @@ export async function proxy(request: NextRequest) {
 
   const caminho = request.nextUrl.pathname;
   const isAuthRoute = caminho.startsWith("/login");
-  // abertas pra quem não entrou: o link dos e-mails do Supabase e a
-  // página de apoio (o link do resumo por e-mail)
+  // abertas pra quem não entrou: o link dos e-mails do Supabase, a
+  // página de apoio (o link do resumo por e-mail) e a de privacidade (o
+  // Google pede o link no "Continuar com Google")
   // a rota de coleta tem a própria senha (COLETA_SECRET), chamada pelo GitHub
   const publica =
-    isAuthRoute || caminho.startsWith("/auth/") || caminho.startsWith("/apoiar") || caminho === "/api/coletar-bloqueados";
+    isAuthRoute ||
+    caminho.startsWith("/auth/") ||
+    caminho.startsWith("/apoiar") ||
+    caminho.startsWith("/privacidade") ||
+    caminho === "/api/coletar-bloqueados";
 
   if (!user && !publica) {
     const url = request.nextUrl.clone();

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ApoiarProjeto } from "@/components/ApoiarProjeto";
 import { Icon, type NomeIcone } from "@/components/Icon";
 import { Logo } from "@/components/Logo";
@@ -10,6 +11,7 @@ import { BotaoEntrar, PainelEntrar } from "@/components/PainelEntrar";
 const AVISOS: Record<string, { texto: string; modo: "entrar" | "esqueci" }> = {
   excluida: { texto: "Sua conta foi excluída. Se quiser voltar, é só criar uma nova.", modo: "entrar" },
   invalido: { texto: "Esse link expirou ou já foi usado. Peça outro aqui.", modo: "esqueci" },
+  google: { texto: "Não deu para entrar com o Google. Tente de novo ou use seu e-mail e senha.", modo: "entrar" },
 };
 
 const PASSOS: { titulo: string; texto: string }[] = [
@@ -167,9 +169,14 @@ export default async function EntradaPage(props: PageProps<"/login">) {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-[1080px] flex-col items-center justify-between gap-3 px-4 py-8 text-[12px] text-text-muted sm:flex-row sm:px-6">
           <span>Daily Paper · projeto independente, sem anúncios</span>
-          <BotaoEntrar modo="entrar" className="font-semibold text-foreground hover:text-accent">
-            Entrar
-          </BotaoEntrar>
+          <div className="flex items-center gap-5">
+            <Link href="/privacidade" className="hover:text-accent">
+              Privacidade
+            </Link>
+            <BotaoEntrar modo="entrar" className="font-semibold text-foreground hover:text-accent">
+              Entrar
+            </BotaoEntrar>
+          </div>
         </div>
       </footer>
 

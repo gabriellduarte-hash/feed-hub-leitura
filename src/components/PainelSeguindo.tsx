@@ -23,7 +23,16 @@ const comoItem = (s: SugestaoSeguir): ItemSeguido => ({ tipo: s.tipo, chave: s.c
 /** Aba Temas de Seguir: o que a pessoa segue, a busca pra seguir mais,
  * os temas e nomes mais citados nos últimos 3 dias e, com `catalogo`,
  * todos os temas do catálogo por assunto. */
-export function PainelSeguindo({ emAlta, catalogo }: { emAlta: SugestaoSeguir[]; catalogo?: TemaDoCatalogo[] }) {
+export function PainelSeguindo({
+  emAlta,
+  catalogo,
+  surgindo = [],
+}: {
+  emAlta: SugestaoSeguir[];
+  catalogo?: TemaDoCatalogo[];
+  /** Nomes que surgiram nas últimas 24h (sql/048) */
+  surgindo?: SugestaoSeguir[];
+}) {
   const { itens, segue, alternar } = useSeguindo();
   const [termo, setTermo] = useState("");
   const [resultados, setResultados] = useState<SugestaoSeguir[] | null>(null);
@@ -148,6 +157,22 @@ export function PainelSeguindo({ emAlta, catalogo }: { emAlta: SugestaoSeguir[];
           <div className="flex flex-wrap gap-2">
             {itens.map((item) => (
               <ChipSeguir key={idDoItem(item)} item={item} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {surgindo.length > 0 && (
+        <section aria-label="Surgindo agora" className="flex flex-col gap-2.5">
+          <h2 className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">
+            <Icon nome="tendencia" tamanho={13} className="text-accent" />
+            Surgindo agora
+          </h2>
+          <div className="sem-barra -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+            {surgindo.map((s) => (
+              <span key={idDoItem(s)} className="flex-shrink-0 sm:flex-shrink">
+                <ChipSeguir item={comoItem(s)} />
+              </span>
             ))}
           </div>
         </section>

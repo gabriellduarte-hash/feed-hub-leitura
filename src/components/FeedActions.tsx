@@ -34,12 +34,11 @@ export function FeedActions({
   const [preferencias] = usePreferencias();
 
   function marcarTudo() {
+    // o número é o das novas de hoje; o "marcar tudo" vale pros últimos 30 dias
     if (preferencias.confirmarMarcarTudo && !window.confirm(
-        naoLidos === 1
-          ? "Marcar 1 notícia como lida?"
-          : naoLidos
-            ? `Marcar ${naoLidos} notícias como lidas?`
-            : "Marcar todas as notícias como lidas?",
+        naoLidos
+          ? `Marcar todas as notícias como lidas? (${naoLidos} ${naoLidos === 1 ? "nova" : "novas"} hoje)`
+          : "Marcar todas as notícias como lidas?",
       )) return;
     startTransition(async () => {
       await marcarTudoComoLido(escopo);
@@ -63,7 +62,10 @@ export function FeedActions({
         className={classeBotao}
       >
         {!!naoLidos && (
-          <span className="absolute -top-0.5 left-1 text-[10px] leading-none text-text-muted">
+          <span
+            title={`${naoLidos} ${naoLidos === 1 ? "nova" : "novas"} hoje, ainda não ${naoLidos === 1 ? "lida" : "lidas"}`}
+            className="absolute -top-0.5 left-1 text-[10px] leading-none text-text-muted"
+          >
             {naoLidos}
           </span>
         )}

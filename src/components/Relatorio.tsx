@@ -209,6 +209,86 @@ export function PaineisDoAgrupamento({
   );
 }
 
+export type RelatorioTemas = {
+  total: number;
+  com_tema: number;
+  sem_noticia: string[];
+  exemplos_sem_tema: string[];
+  avaliacao: { tema: string; avaliados: number; errados: number }[];
+};
+
+/** Temas (sql/047 e 048): quantas notícias ganham tema específico, o acerto
+ * pela conferência à mão, temas sem notícia e exemplos sem tema (onde
+ * falta termo ou tema novo). Tudo de relatorio_temas. */
+export function PainelDosTemas({ r }: { r: RelatorioTemas }) {
+  const avaliados = r.avaliacao.reduce((s, a) => s + a.avaliados, 0);
+  const errados = r.avaliacao.reduce((s, a) => s + a.errados, 0);
+  const comErro = r.avaliacao.filter((a) => a.errados > 0).sort((a, b) => b.errados / b.avaliados - a.errados / a.avaliados);
+  return (
+    <div className="flex flex-col gap-12 border-t border-border pt-12 pb-10">
+      <div className="grid gap-12 lg:grid-cols-2">
+        <Painel titulo="Temas" nota="Notícias dos últimos 3 dias. Tema específico: Filmes, Fofoca, Quadrinhos (não só a categoria).">
+          <div className="grid grid-cols-3 gap-3">
+            <NumeroTexto rotulo="Com tema" valor={porcento(r.com_tema, r.total)} detalhe={`de ${numero(r.total)} notícias`} />
+            <Numero rotulo="Conferidos" valor={avaliados} detalhe="temas marcados à mão" />
+            <NumeroTexto rotulo="Acerto" valor={porcento(avaliados - errados, avaliados)} detalhe="dos temas conferidos" />
+          </div>
+          {comErro.length > 0 && (
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b border-border text-left text-[11px] text-text-muted">
+                  <th className="py-2 font-normal">Tema com erro</th>
+                  <th className="py-2 text-right font-normal">Conferidos</th>
+                  <th className="py-2 text-right font-normal">Acerto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comErro.slice(0, 10).map((a) => (
+                  <tr key={a.tema} className="border-b border-border/60">
+                    <td className="py-2 text-text-secondary">#{a.tema.toLowerCase()}</td>
+                    <td className="py-2 text-right text-text-muted tabular-nums">{numero(a.avaliados)}</td>
+                    <td className="py-2 text-right font-semibold text-foreground tabular-nums">
+                      {porcento(a.avaliados - a.errados, a.avaliados)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <Link
+            href="/relatorios/temas"
+            className="w-fit rounded-md bg-foreground px-4 py-2 text-[13px] font-semibold text-background transition-colors hover:bg-accent"
+          >
+            Conferir temas
+          </Link>
+        </Painel>
+        <div className="flex flex-col gap-12">
+          <Painel titulo="Notícias sem tema" nota="As mais recentes: onde falta termo ou um tema novo.">
+            {r.exemplos_sem_tema.length === 0 ? (
+              <Vazio />
+            ) : (
+              <ul className="flex flex-col gap-2 text-[13px] text-text-secondary">
+                {r.exemplos_sem_tema.map((t, i) => (
+                  <li key={i} className="truncate" title={t}>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Painel>
+          <Painel titulo="Temas sem notícia" nota="Nenhuma notícia em 3 dias: termos fracos ou assunto parado.">
+            {r.sem_noticia.length === 0 ? (
+              <Vazio />
+            ) : (
+              <p className="text-[13px] leading-relaxed text-text-secondary">{r.sem_noticia.map((t) => `#${t.toLowerCase()}`).join(" · ")}</p>
+            )}
+          </Painel>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NumeroTexto({ rotulo, valor, detalhe }: { rotulo: string; valor: string; detalhe?: string }) {
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-4">
