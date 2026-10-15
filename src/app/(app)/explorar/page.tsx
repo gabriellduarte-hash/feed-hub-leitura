@@ -8,7 +8,7 @@ import { Conteudo } from "@/components/FeedLayout";
 import { Icon, type NomeIcone } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
 import { PainelSeguindo } from "@/components/PainelSeguindo";
-import { sugerirParaSeguir } from "@/app/actions/seguir";
+import { catalogoDeTemas, sugerirParaSeguir } from "@/app/actions/seguir";
 import { BotaoSeguir, BuscaNaWeb, LinhaFonte, SeguirPorUrlForm } from "./Seguir";
 
 // Adicionar fonte detecta o tipo e já coleta as notícias: pode passar dos
@@ -138,7 +138,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
             <b className="font-semibold text-foreground">Temas</b>, e toda notícia nova sobre ele aparece lá, das suas fontes
             e de sites do Brasil.
           </p>
-          <PainelSeguindo emAlta={await sugerirParaSeguir("")} />
+          <PainelSeguindo emAlta={await sugerirParaSeguir("")} catalogo={await catalogoDeTemas()} />
         </>
       ) : aba === "url" ? (
         <SeguirPorUrlForm colecoes={colecoes} colecaoPreferida={colecaoPreferida?.id} />

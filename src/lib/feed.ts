@@ -2,6 +2,7 @@ import { consertarAcentos } from "./limpar-texto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hostDe, nomeDaFonte } from "./fonte";
 import type { TipoSeguido } from "./seguir";
+import { expressaoDaPalavra, palavrasDaBusca } from "./busca";
 
 /** Um nome da notícia, achado pelo spaCy no coletor (sql/045): pessoa,
  * organização, lugar ou outro (obra, produto, evento). A chave é o nome
@@ -37,6 +38,8 @@ export type ArtigoLista = {
   entidades?: Entidade[];
   /** Todos os temas: qual tema seguido apareceu na notícia */
   motivo?: string;
+  /** Data da notícia (ISO), pra ordenar listas juntadas (busca) */
+  quando?: string;
 };
 
 type LinhaArtigo = {
@@ -117,6 +120,8 @@ export type FiltroArtigos = {
   topicoId?: string;
   ids?: string[];
   busca?: string;
+  /** Notícias com algum destes temas (a busca soma as do tema buscado) */
+  temas?: string[];
   limite?: number;
   offset?: number;
 };
@@ -131,6 +136,8 @@ export type FiltroPagina = {
   /** Temas: notícias dos temas e nomes que a pessoa segue (todos, ou só `tema`) */
   seguindo?: boolean;
   tema?: { tipo: TipoSeguido; chave: string };
+  /** Início › Eu: as fontes da pessoa e, junto, os temas que ela segue */
+  principal?: boolean;
 };
 
 export const TAMANHO_PAGINA = 30;
@@ -155,11 +162,13 @@ export async function buscarArtigos(
   if (filtro.fonteId) consulta = consulta.eq("source_id", filtro.fonteId);
   if (filtro.topicoId) consulta = consulta.eq("topic_id", filtro.topicoId);
   if (filtro.ids) consulta = consulta.in("id", filtro.ids);
+  if (filtro.temas) consulta = consulta.overlaps("temas", filtro.temas);
   if (filtro.busca) {
-    // vírgula e parênteses têm significado na sintaxe do .or() do
-    // PostgREST — tirar evita que o termo digitado vire filtro extra
-    const termo = filtro.busca.replace(/[,()]/g, " ").trim();
-    if (termo) consulta = consulta.or(`title.ilike.%${termo}%,content.ilike.%${termo}%`);
+    // cada palavra no singular ou no plural, sem acento, na coluna `busca`
+    // (título + começo do texto, sql/047); todas precisam aparecer
+    const palavras = palavrasDaBusca(filtro.busca);
+    if (palavras.length === 0) return [];
+    for (const palavra of palavras) consulta = consulta.filter("busca", "match", expressaoDaPalavra(palavra));
   }
 
   const { data } = await consulta;
@@ -202,6 +211,7 @@ async function enriquecer(supabase: SupabaseClient, linhas: LinhaArtigo[]) {
       origem: "usuario" as const,
       temas: l.temas ?? [],
       entidades: l.entidades ?? [],
+      quando: l.published_at ?? l.collected_at,
     };
   });
 }
@@ -218,7 +228,9 @@ export type Secao = { titulo: string; artigos: ArtigoLista[] };
 
 /** Uma página do feed: pede um item a mais só pra saber se ainda tem próxima. */
 export async function buscarPagina(supabase: SupabaseClient, filtro: FiltroPagina, offset = 0) {
-  const artigos = filtro.seguindo
+  const artigos = filtro.principal
+    ? await buscarPrincipal(supabase, offset, TAMANHO_PAGINA + 1)
+    : filtro.seguindo
     ? await buscarSeguidas(supabase, offset, TAMANHO_PAGINA + 1, filtro.tema)
     : filtro.catalogo
       ? await buscarNoticiasDoCatalogo(supabase, filtro.categoria, offset, TAMANHO_PAGINA + 1)
@@ -307,7 +319,7 @@ type LinhaSeguida = {
   origem: "usuario" | "catalogo";
   temas: string[] | null;
   entidades: Entidade[] | null;
-  cobertura: number;
+  cobertura?: number;
   motivo: string | null;
 };
 
@@ -328,7 +340,22 @@ async function buscarSeguidas(
     p_chave: tema?.chave ?? null,
   });
   if (error || !data) return [];
-  const linhas = data as LinhaSeguida[];
+  // na página de um tema, todas são dele: o "✓ tema" em cada uma sobra
+  return misturadas(supabase, data as LinhaSeguida[], !tema);
+}
+
+/** Início › Eu (função feed_principal, sql/047): as notícias das fontes da
+ * pessoa e, no meio, as do catálogo sobre os temas que ela segue (uma por
+ * história, com o "✓ tema" que as trouxe). */
+async function buscarPrincipal(supabase: SupabaseClient, offset: number, limite: number) {
+  const { data, error } = await supabase.rpc("feed_principal", { p_limite: limite, p_offset: offset });
+  if (error || !data) return [];
+  return misturadas(supabase, data as LinhaSeguida[], true);
+}
+
+/** Linhas que misturam notícias das fontes da pessoa (com lido/salvo) e
+ * do catálogo, no formato da lista. */
+async function misturadas(supabase: SupabaseClient, linhas: LinhaSeguida[], comMotivo: boolean): Promise<ArtigoLista[]> {
   const minhas = linhas.filter((l) => l.origem === "usuario").map((l) => l.id);
   const [{ data: lidos }, { data: salvos }] = minhas.length
     ? await Promise.all([
@@ -363,8 +390,7 @@ async function buscarSeguidas(
       cobertura: l.cobertura,
       temas: l.temas ?? [],
       entidades: l.entidades ?? [],
-      // na página de um tema, todas são dele: o "✓ tema" em cada uma sobra
-      motivo: tema ? undefined : (l.motivo ?? undefined),
+      motivo: comMotivo ? (l.motivo ?? undefined) : undefined,
     };
   });
 }

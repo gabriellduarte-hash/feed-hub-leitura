@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { combina, expressaoDaPalavra, palavrasDaBusca } from "@/lib/busca";
+import { CATEGORIAS } from "@/lib/feed";
 import { MAX_SEGUINDO, normalizarChave, type ItemSeguido, type SugestaoSeguir } from "@/lib/seguir";
 
 /* Seguir temas e nomes (tabela seguindo, sql/045). A RLS garante que cada
@@ -55,24 +57,65 @@ export async function deixarDeSeguir(item: Pick<ItemSeguido, "tipo" | "chave">):
   return {};
 }
 
-/** Temas e nomes citados nos últimos 3 dias (tabela sugestoes_seguir, que
- * o coletor refaz de hora em hora). Sem busca: os mais citados. */
-export async function sugerirParaSeguir(busca: string): Promise<SugestaoSeguir[]> {
-  const termo = normalizarChave(String(busca ?? "").slice(0, 60));
+export type TemaDoCatalogo = { nome: string; grupo: string; sinonimos: string[]; noticias: number };
+
+/** O catálogo de temas (catalogo_temas, sql/047: o coletor copia de
+ * temas.py), na ordem dos assuntos, com quantas notícias cada tema teve
+ * nos últimos 3 dias. */
+export async function catalogoDeTemas(): Promise<TemaDoCatalogo[]> {
   const supabase = await createClient();
-  const campos = "tipo, chave, rotulo, detalhe, noticias";
-  // Temas são poucos (~25) e têm acento na chave ("Eleições"): vêm todos e
-  // o filtro sem acento é aqui. Nomes têm a chave já sem acento.
-  let nomes = supabase.from("sugestoes_seguir").select(campos).eq("tipo", "nome").order("noticias", { ascending: false });
-  // pelo começo de uma palavra: "lula" acha "Lula" e "Luiz Inácio Lula", não "celulares"
-  nomes = termo ? nomes.or(`chave.ilike.${termo}*,chave.ilike."* ${termo}*"`).limit(8) : nomes.limit(12);
-  const [{ data: temas }, { data: achados }] = await Promise.all([
-    supabase.from("sugestoes_seguir").select(campos).eq("tipo", "tema").order("noticias", { ascending: false }),
-    nomes,
+  const [{ data: catalogo }, { data: contagem }] = await Promise.all([
+    supabase.from("catalogo_temas").select("nome, grupo, sinonimos").order("ordem"),
+    supabase.from("sugestoes_seguir").select("chave, noticias").eq("tipo", "tema"),
   ]);
-  const temasDaBusca = ((temas ?? []) as SugestaoSeguir[]).filter(
-    (t) => !termo || ` ${normalizarChave(t.rotulo)}`.includes(` ${termo}`),
-  );
-  const lista = [...temasDaBusca.slice(0, termo ? 4 : 6), ...((achados ?? []) as SugestaoSeguir[])];
-  return lista.slice(0, termo ? 8 : 18);
+  const noticias = new Map((contagem ?? []).map((c) => [c.chave as string, c.noticias as number]));
+  return ((catalogo ?? []) as Omit<TemaDoCatalogo, "noticias">[]).map((t) => ({ ...t, noticias: noticias.get(t.nome) ?? 0 }));
+}
+
+/** Os temas que a busca de notícias soma ("fofoca" traz também as
+ * notícias marcadas com Fofoca). Pelo nome ou sinônimo, mas um tema amplo
+ * (a categoria inteira: Cinema, Games) só quando o nome bate ("games"
+ * sim; "séries" não puxa todo o Cinema). */
+export async function temasDaBusca(busca: string) {
+  const palavras = palavrasDaBusca(String(busca ?? "").slice(0, 60));
+  if (palavras.length === 0) return [];
+  return (await catalogoDeTemas())
+    .filter((t) => combina([t.nome, ...t.sinonimos], palavras))
+    .filter((t) => combina([t.nome], palavras) || !CATEGORIAS.includes(t.nome))
+    .map((t) => t.nome);
+}
+
+/** Temas do catálogo (pelo nome ou sinônimo, no singular ou plural: "hq"
+ * acha Quadrinhos, "filme" acha Filmes) e nomes citados nos últimos 3
+ * dias (tabela sugestoes_seguir, que o coletor refaz de hora em hora).
+ * Sem busca: os mais citados. */
+export async function sugerirParaSeguir(busca: string): Promise<SugestaoSeguir[]> {
+  const palavras = palavrasDaBusca(String(busca ?? "").slice(0, 60));
+  const supabase = await createClient();
+  let nomes = supabase
+    .from("sugestoes_seguir")
+    .select("tipo, chave, rotulo, detalhe, noticias")
+    .eq("tipo", "nome")
+    .order("noticias", { ascending: false });
+  // cada palavra no começo de uma palavra do nome: "lula" acha "Lula" e
+  // "Luiz Inácio Lula", não "celulares"; a última pode estar pela metade
+  palavras.forEach((p, i) => {
+    nomes = nomes.filter("chave", "match", expressaoDaPalavra(p, i === palavras.length - 1));
+  });
+  const [catalogo, { data: achados }] = await Promise.all([catalogoDeTemas(), nomes.limit(palavras.length ? 8 : 12)]);
+
+  const temas = catalogo
+    .filter((t) => (palavras.length ? combina([t.nome, ...t.sinonimos], palavras) : t.noticias > 0))
+    .map((t) => ({
+      tipo: "tema" as const,
+      chave: t.nome,
+      rotulo: t.nome,
+      detalhe: t.grupo,
+      noticias: t.noticias,
+      // na busca, quem bate pelo nome vem antes de quem bate pelo sinônimo
+      peloNome: palavras.length > 0 && combina([t.nome], palavras),
+    }))
+    .sort((a, b) => Number(b.peloNome) - Number(a.peloNome) || b.noticias - a.noticias)
+    .map((t) => ({ tipo: t.tipo, chave: t.chave, rotulo: t.rotulo, detalhe: t.detalhe, noticias: t.noticias }));
+  return [...temas.slice(0, palavras.length ? 5 : 6), ...((achados ?? []) as SugestaoSeguir[])].slice(0, palavras.length ? 10 : 18);
 }

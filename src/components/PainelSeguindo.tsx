@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { sugerirParaSeguir } from "@/app/actions/seguir";
+import { sugerirParaSeguir, type TemaDoCatalogo } from "@/app/actions/seguir";
 import { idDoItem, type ItemSeguido, type SugestaoSeguir } from "@/lib/seguir";
 import { Icon } from "./Icon";
 import { ChipSeguir, useSeguindo } from "./Seguindo";
@@ -20,9 +20,10 @@ function detalheDa(s: SugestaoSeguir) {
 
 const comoItem = (s: SugestaoSeguir): ItemSeguido => ({ tipo: s.tipo, chave: s.chave, rotulo: s.rotulo });
 
-/** Aba Temas de Seguir: o que a pessoa segue, a busca pra seguir mais e,
- * sem busca, os temas e nomes mais citados nos últimos 3 dias. */
-export function PainelSeguindo({ emAlta }: { emAlta: SugestaoSeguir[] }) {
+/** Aba Temas de Seguir: o que a pessoa segue, a busca pra seguir mais,
+ * os temas e nomes mais citados nos últimos 3 dias e, com `catalogo`,
+ * todos os temas do catálogo por assunto. */
+export function PainelSeguindo({ emAlta, catalogo }: { emAlta: SugestaoSeguir[]; catalogo?: TemaDoCatalogo[] }) {
   const { itens, segue, alternar } = useSeguindo();
   const [termo, setTermo] = useState("");
   const [resultados, setResultados] = useState<SugestaoSeguir[] | null>(null);
@@ -166,6 +167,30 @@ export function PainelSeguindo({ emAlta }: { emAlta: SugestaoSeguir[] }) {
           </div>
         </section>
       )}
+
+      {catalogo && catalogo.length > 0 && <TodosOsTemas catalogo={catalogo} />}
     </div>
+  );
+}
+
+/** O catálogo inteiro, por assunto (Entretenimento, Cinema e séries,
+ * Cultura geek...): pra descobrir temas sem saber o nome. */
+function TodosOsTemas({ catalogo }: { catalogo: TemaDoCatalogo[] }) {
+  const grupos = new Map<string, TemaDoCatalogo[]>();
+  for (const t of catalogo) grupos.set(t.grupo, [...(grupos.get(t.grupo) ?? []), t]);
+  return (
+    <section aria-label="Todos os temas" className="mt-4 flex flex-col gap-6 border-t border-border pt-8">
+      <h2 className="text-[11px] font-semibold tracking-[0.14em] text-text-muted uppercase">Todos os temas</h2>
+      {[...grupos.entries()].map(([grupo, temas]) => (
+        <div key={grupo} className="flex flex-col gap-2.5">
+          <h3 className="text-[14px] font-bold text-foreground">{grupo}</h3>
+          <div className="flex flex-wrap gap-2">
+            {temas.map((t) => (
+              <ChipSeguir key={t.nome} item={{ tipo: "tema", chave: t.nome, rotulo: t.nome }} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
   );
 }

@@ -17,7 +17,7 @@ export default async function InicioPage(props: PageProps<"/">) {
         titulo="Início"
         subtitulo={
           aba === "eu"
-            ? "As últimas das fontes que você segue"
+            ? "As últimas das fontes e dos temas que você segue"
             : "As últimas de sites de notícias do Brasil"
         }
         acoes={aba === "eu" ? <FeedActions escopo={{ tipo: "todos" }} naoLidos={await contarNaoLidos(supabase)} /> : undefined}
@@ -38,19 +38,26 @@ export default async function InicioPage(props: PageProps<"/">) {
   );
 }
 
+/* Eu: as fontes da pessoa e os temas que ela segue (sql/047). O
+ * Trending fica só no Explorar. */
 async function AbaEu() {
   const supabase = await createClient();
-  const [pagina, destaques] = await Promise.all([buscarPagina(supabase, {}), buscarTrending(supabase)]);
+  const [pagina, { data: seguidos }] = await Promise.all([
+    buscarPagina(supabase, { principal: true }),
+    supabase.from("seguindo").select("tipo, chave"),
+  ]);
   if (pagina.artigos.length === 0) {
     return (
       <Vazio
         titulo="Seu feed está vazio"
-        texto="Siga alguns sites para ver as notícias deles aqui."
+        texto="Siga alguns sites ou temas para ver as notícias deles aqui."
         acao={{ rotulo: "Seguir fontes", href: "/explorar" }}
       />
     );
   }
-  return <ArticleList key="eu" feed={{ ...pagina, filtro: {} }} destaques={destaques} />;
+  // a lista recomeça (sem as páginas já carregadas) quando os temas seguidos mudam
+  const chave = (seguidos ?? []).map((s) => `${s.tipo}:${s.chave}`).sort().join("|");
+  return <ArticleList key={`eu-${chave}`} feed={{ ...pagina, filtro: { principal: true } }} />;
 }
 
 async function AbaExplorar({ categoria }: { categoria?: string }) {

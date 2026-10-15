@@ -14,6 +14,7 @@ export async function carregarMaisArtigos(filtro: FiltroPagina, offset: number) 
   if (filtro.topicoId && UUID.test(filtro.topicoId)) seguro.topicoId = filtro.topicoId;
   if (filtro.catalogo === true) seguro.catalogo = true;
   if (filtro.seguindo === true) seguro.seguindo = true;
+  if (filtro.principal === true) seguro.principal = true;
   if (
     filtro.tema &&
     (filtro.tema.tipo === "tema" || filtro.tema.tipo === "nome") &&
