@@ -1,6 +1,7 @@
 import { consertarAcentos } from "./limpar-texto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hostDe, nomeDaFonte } from "./fonte";
+import type { TipoSeguido } from "./seguir";
 
 /** Um nome da notícia, achado pelo spaCy no coletor (sql/045): pessoa,
  * organização, lugar ou outro (obra, produto, evento). A chave é o nome
@@ -34,7 +35,7 @@ export type ArtigoLista = {
   /** Subassuntos (taxonomia do coletor) e nomes: o que dá pra seguir */
   temas?: string[];
   entidades?: Entidade[];
-  /** Aba Seguindo: o que a pessoa segue que apareceu na notícia */
+  /** Todos os temas: qual tema seguido apareceu na notícia */
   motivo?: string;
 };
 
@@ -127,8 +128,9 @@ export type FiltroPagina = {
   /** Lista notícias do catálogo (aba Explorar) em vez dos artigos do usuário */
   catalogo?: boolean;
   categoria?: string;
-  /** Aba Seguindo: notícias dos temas e nomes que a pessoa segue */
+  /** Temas: notícias dos temas e nomes que a pessoa segue (todos, ou só `tema`) */
   seguindo?: boolean;
+  tema?: { tipo: TipoSeguido; chave: string };
 };
 
 export const TAMANHO_PAGINA = 30;
@@ -217,7 +219,7 @@ export type Secao = { titulo: string; artigos: ArtigoLista[] };
 /** Uma página do feed: pede um item a mais só pra saber se ainda tem próxima. */
 export async function buscarPagina(supabase: SupabaseClient, filtro: FiltroPagina, offset = 0) {
   const artigos = filtro.seguindo
-    ? await buscarSeguidas(supabase, offset, TAMANHO_PAGINA + 1)
+    ? await buscarSeguidas(supabase, offset, TAMANHO_PAGINA + 1, filtro.tema)
     : filtro.catalogo
       ? await buscarNoticiasDoCatalogo(supabase, filtro.categoria, offset, TAMANHO_PAGINA + 1)
       : await buscarArtigos(supabase, { fonteId: filtro.fonteId, topicoId: filtro.topicoId, offset, limite: TAMANHO_PAGINA + 1 });
@@ -309,11 +311,22 @@ type LinhaSeguida = {
   motivo: string | null;
 };
 
-/** Aba Seguindo (função noticias_seguidas, sql/045): notícias dos últimos
- * 7 dias com um tema ou nome que a pessoa segue, das fontes dela e do
- * catálogo, uma por história. As das fontes dela vêm com lido/salvo. */
-async function buscarSeguidas(supabase: SupabaseClient, offset: number, limite: number): Promise<ArtigoLista[]> {
-  const { data, error } = await supabase.rpc("noticias_seguidas", { p_limite: limite, p_offset: offset });
+/** Temas (função noticias_seguidas, sql/046): notícias dos últimos 7 dias
+ * com um tema ou nome que a pessoa segue (ou só com `tema`), das fontes
+ * dela e do catálogo, uma por história. As das fontes dela vêm com
+ * lido/salvo. */
+async function buscarSeguidas(
+  supabase: SupabaseClient,
+  offset: number,
+  limite: number,
+  tema?: { tipo: TipoSeguido; chave: string },
+): Promise<ArtigoLista[]> {
+  const { data, error } = await supabase.rpc("noticias_seguidas", {
+    p_limite: limite,
+    p_offset: offset,
+    p_tipo: tema?.tipo ?? null,
+    p_chave: tema?.chave ?? null,
+  });
   if (error || !data) return [];
   const linhas = data as LinhaSeguida[];
   const minhas = linhas.filter((l) => l.origem === "usuario").map((l) => l.id);
@@ -350,7 +363,8 @@ async function buscarSeguidas(supabase: SupabaseClient, offset: number, limite: 
       cobertura: l.cobertura,
       temas: l.temas ?? [],
       entidades: l.entidades ?? [],
-      motivo: l.motivo ?? undefined,
+      // na página de um tema, todas são dele: o "✓ tema" em cada uma sobra
+      motivo: tema ? undefined : (l.motivo ?? undefined),
     };
   });
 }

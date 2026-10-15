@@ -300,7 +300,7 @@ export function ArticlePanel({
               <span className="font-light text-text-muted">{a.dataCompleta}</span>
             </div>
 
-            {/* temas e nomes da notícia (sql/045): seguir manda as próximas pra aba Seguindo */}
+            {/* temas e nomes da notícia (sql/045): seguir põe o tema no menu, em Temas */}
             {seguiveis.length > 0 && (
               <div role="group" aria-label="Seguir temas e nomes desta notícia" className="mt-5 flex flex-wrap gap-2">
                 {seguiveis.map((item) => (

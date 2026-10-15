@@ -7,6 +7,8 @@ import { faviconDe, hostDe } from "@/lib/fonte";
 import { Conteudo } from "@/components/FeedLayout";
 import { Icon, type NomeIcone } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
+import { PainelSeguindo } from "@/components/PainelSeguindo";
+import { sugerirParaSeguir } from "@/app/actions/seguir";
 import { BotaoSeguir, BuscaNaWeb, LinhaFonte, SeguirPorUrlForm } from "./Seguir";
 
 // Adicionar fonte detecta o tipo e já coleta as notícias: pode passar dos
@@ -47,7 +49,7 @@ function relevancia(item: ItemCatalogo, busca: string) {
 
 export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
   const params = await props.searchParams;
-  const aba = texto(params.aba) === "url" ? "url" : "sites";
+  const aba = texto(params.aba) === "url" ? "url" : texto(params.aba) === "temas" ? "temas" : "sites";
   const termo = texto(params.q);
   const categoria = texto(params.categoria);
   // Fontes em inglês ficam separadas das brasileiras (filtro e seções)
@@ -100,7 +102,7 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
 
   return (
     <Conteudo>
-      <PageHeader titulo="Seguir fontes" />
+      <PageHeader titulo="Seguir" />
 
       <nav className="-mt-2 mb-8 flex gap-7 border-b border-border">
         <Aba href={`/explorar?aba=sites${sufixoColecao}`} ativa={aba === "sites"} icone="globo">
@@ -109,9 +111,12 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
         <Aba href={`/explorar?aba=url${sufixoColecao}`} ativa={aba === "url"} icone="link">
           Por link
         </Aba>
+        <Aba href="/explorar?aba=temas" ativa={aba === "temas"} icone="hashtag">
+          Temas
+        </Aba>
       </nav>
 
-      {colecaoPreferida && (
+      {colecaoPreferida && aba !== "temas" && (
         <div className="animate-fade-up mb-6 flex items-center justify-between rounded-lg bg-accent-soft px-4 py-2.5 text-sm text-foreground">
           <span>
             Adicionando à coleção <b>{colecaoPreferida.nome}</b>
@@ -125,7 +130,17 @@ export default async function SeguirFontesPage(props: PageProps<"/explorar">) {
         </div>
       )}
 
-      {aba === "url" ? (
+      {aba === "temas" ? (
+        // temas e nomes (sql/045 e 046): seguidos, eles vão pro menu, em Temas
+        <>
+          <p className="-mt-2 mb-6 max-w-[620px] text-[13px] leading-relaxed text-text-secondary">
+            Siga um assunto, uma pessoa, um time, uma empresa, um filme ou um jogo. Ele entra no menu, em{" "}
+            <b className="font-semibold text-foreground">Temas</b>, e toda notícia nova sobre ele aparece lá, das suas fontes
+            e de sites do Brasil.
+          </p>
+          <PainelSeguindo emAlta={await sugerirParaSeguir("")} />
+        </>
+      ) : aba === "url" ? (
         <SeguirPorUrlForm colecoes={colecoes} colecaoPreferida={colecaoPreferida?.id} />
       ) : (
         <>

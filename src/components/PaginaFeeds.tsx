@@ -13,11 +13,12 @@ import { ItemMenu, Menu, SeparadorMenu } from "./Menu";
 import { ItensMenuColecao, ItensMenuFonte } from "./MenusFonte";
 import type { FonteSidebar } from "./Sidebar";
 import { mostrarToast } from "./Toast";
+import { SecaoTemas } from "./Temas";
 
-/* A página Feeds: no celular é onde ficam as coleções e as fontes (no
- * computador elas também estão no menu lateral). Mesmas ações do menu
- * lateral, com os botões sempre à mostra (no toque não existe "passar o
- * mouse"), e as configurações do resumo diário no fim. */
+/* A página Coleções: no celular é onde ficam as coleções, as fontes e os
+ * temas seguidos (no computador eles também estão no menu lateral). Mesmas
+ * ações do menu lateral, com os botões sempre à mostra (no toque não
+ * existe "passar o mouse"), e as configurações do resumo diário no fim. */
 
 const botaoAcao =
   "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-hover active:bg-surface-active";
@@ -198,6 +199,8 @@ export function PaginaFeeds() {
           );
         })}
       </section>
+
+      <SecaoTemas contagem={dados.contagemTemas} />
 
       <section className="flex flex-col gap-6 rounded-lg border border-border bg-surface p-5 md:p-7">
         <SecaoResumo email={dados.email} colecoes={colecoesMenu} />

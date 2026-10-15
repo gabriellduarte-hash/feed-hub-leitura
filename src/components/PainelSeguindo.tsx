@@ -20,7 +20,7 @@ function detalheDa(s: SugestaoSeguir) {
 
 const comoItem = (s: SugestaoSeguir): ItemSeguido => ({ tipo: s.tipo, chave: s.chave, rotulo: s.rotulo });
 
-/** Topo da aba Seguindo: o que a pessoa segue, a busca pra seguir mais e,
+/** Aba Temas de Seguir: o que a pessoa segue, a busca pra seguir mais e,
  * sem busca, os temas e nomes mais citados nos últimos 3 dias. */
 export function PainelSeguindo({ emAlta }: { emAlta: SugestaoSeguir[] }) {
   const { itens, segue, alternar } = useSeguindo();

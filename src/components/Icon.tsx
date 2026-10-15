@@ -91,6 +91,9 @@ const PATHS = {
       <path d="M7.5 16l2.5-8 2.5 8 M8.3 13.5h3.4 M16 8v8" />
     </>
   ),
+  // tema seguido (#eleições) e nome seguido (pessoa, time, empresa)
+  hashtag: <path d="M5 9h14 M5 15h14 M10 4 8 20 M16 4l-2 16" />,
+  etiqueta: <path d="M3 11.5V4a1 1 0 0 1 1-1h7.5l9 9.5-8.5 8.5z M7.5 7.5h.01" />,
   globo: (
     <>
       <circle cx="12" cy="12" r="9" />

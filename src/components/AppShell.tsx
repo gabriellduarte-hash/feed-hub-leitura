@@ -102,20 +102,20 @@ function BarraTopoMobile() {
   );
 }
 
-/* Abas do celular: Feeds (coleções e fontes) na ponta esquerda, o Feed
- * (início, com a logo) no meio. */
+/* Abas do celular: Coleções (coleções, fontes e temas) na ponta esquerda,
+ * o Feed (início, com a logo) no meio. */
 function BarraAbasMobile({ dados }: { dados: DadosSidebar }) {
   const pathname = usePathname();
   const inicial = (dados.perfil.nome || dados.email).charAt(0).toUpperCase();
   const noFeed = pathname === "/";
   return (
     <nav className="flex flex-shrink-0 items-stretch justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
-      <AbaMobile href="/feeds" icone="camadas" rotulo="Feeds" ativo={pathname.startsWith("/feeds") || pathname === "/fontes"} />
-      {/* Buscar inclui Lidos recentemente (abas no topo das duas páginas) */}
+      <AbaMobile href="/feeds" icone="camadas" rotulo="Coleções" ativo={pathname.startsWith("/feeds") || pathname === "/fontes"} />
+      {/* Lidos recentemente, com a busca nas notícias no topo */}
       <AbaMobile
-        href="/buscar"
-        icone="buscar"
-        rotulo="Buscar"
+        href="/lidos-recentemente"
+        icone="relogio"
+        rotulo="Lidos"
         ativo={pathname.startsWith("/buscar") || pathname.startsWith("/lidos-recentemente")}
       />
       <Link
@@ -175,7 +175,8 @@ function IrPara({ dados, onFechar }: { dados: DadosSidebar; onFechar: () => void
   const destinos = useMemo<Destino[]>(
     () => [
       { rotulo: "Hoje", href: "/", icone: "casa" },
-      { rotulo: "Seguindo", href: "/?aba=seguindo", icone: "tendencia" },
+      { rotulo: "Todos os temas", href: "/feeds/temas", icone: "hashtag" },
+      { rotulo: "Seguir temas", href: "/explorar?aba=temas", icone: "adicionar" },
       { rotulo: "Todos", href: "/feeds/todos", icone: "camadas" },
       { rotulo: "Ler mais tarde", href: "/ler-mais-tarde", icone: "marcador" },
       { rotulo: "Lidos recentemente", href: "/lidos-recentemente", icone: "relogio" },

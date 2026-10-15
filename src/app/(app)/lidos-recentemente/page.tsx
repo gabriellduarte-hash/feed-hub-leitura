@@ -3,7 +3,7 @@ import { buscarArtigosNaOrdem } from "@/lib/feed";
 import { ArticleList } from "@/components/ArticleList";
 import { Conteudo, Vazio } from "@/components/FeedLayout";
 import { PageHeader } from "@/components/PageHeader";
-import { AbasBusca } from "@/components/AbasBusca";
+import { BuscaNasNoticias } from "@/components/BuscaNasNoticias";
 
 export default async function LidosRecentementePage() {
   const supabase = await createClient();
@@ -20,7 +20,10 @@ export default async function LidosRecentementePage() {
   return (
     <Conteudo>
       <PageHeader titulo="Lidos recentemente" />
-      <AbasBusca ativa="lidos" />
+      {/* no celular esta é a aba de baixo "Lidos": a busca fica aqui (no computador, Buscar está no menu) */}
+      <div className="md:hidden">
+        <BuscaNasNoticias />
+      </div>
       {artigos.length === 0 ? (
         <Vazio
           titulo="Nenhuma notícia lida ainda"

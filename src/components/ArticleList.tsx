@@ -347,7 +347,7 @@ function Meta({ artigo, salvo }: { artigo: ArtigoLista; salvo: boolean }) {
         ·
       </span>
       <span className="font-light text-text-muted">{artigo.tempo}</span>
-      {/* aba Seguindo: quantos sites a mais deram a história e o que fez a notícia aparecer */}
+      {/* Temas: quantos sites a mais deram a história e qual tema seguido trouxe a notícia */}
       {!!artigo.cobertura && (
         <span className="font-light text-text-muted">
           · +{artigo.cobertura} {artigo.cobertura === 1 ? "site" : "sites"}

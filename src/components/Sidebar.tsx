@@ -8,6 +8,7 @@ import { marcarTudoComoLido } from "@/app/actions/artigos";
 import { createClient } from "@/lib/supabase/client";
 import { faviconDe } from "@/lib/fonte";
 import type { ItemSeguido } from "@/lib/seguir";
+import { SubmenuTemas, type ContagemTemas } from "./Temas";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Icon, type NomeIcone } from "./Icon";
 import { ItemMenu, Menu, SeparadorMenu } from "./Menu";
@@ -43,6 +44,8 @@ export type DadosSidebar = {
   admin?: boolean;
   /** Temas e nomes que a pessoa segue (sql/045) */
   seguindo: ItemSeguido[];
+  /** Histórias de hoje de cada tema seguido (sql/046) */
+  contagemTemas: ContagemTemas;
 };
 
 /* Item do menu: ícone grande + nome (aberto) ou só o ícone com dica (recolhido). */
@@ -112,8 +115,11 @@ export function Sidebar({
             icone="camadas"
             rotulo="Todos os feeds"
             recolhido
-            ativo={pathname.startsWith("/feeds")}
+            ativo={pathname.startsWith("/feeds") && !pathname.startsWith("/feeds/tema")}
           />
+        )}
+        {recolhido && (
+          <ItemNav href="/feeds/temas" icone="hashtag" rotulo="Temas" recolhido ativo={pathname.startsWith("/feeds/tema")} />
         )}
         <ItemNav
           href="/ler-mais-tarde"
@@ -171,6 +177,7 @@ export function Sidebar({
       </Link>
 
       {!recolhido && <SubmenuColecoes dados={dados} pathname={pathname} />}
+      {!recolhido && <SubmenuTemas pathname={pathname} contagem={dados.contagemTemas} />}
 
       <div className="mt-auto flex flex-col gap-1 pt-8">
         <button

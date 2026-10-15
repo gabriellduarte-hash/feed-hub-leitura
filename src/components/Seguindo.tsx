@@ -7,9 +7,9 @@ import { Icon } from "./Icon";
 import { mostrarToast } from "./Toast";
 
 /* O que a pessoa segue (temas e nomes, sql/045), pra qualquer tela saber e
- * mudar na hora: o leitor de notícia, a aba Seguindo. A lista vem do
- * layout; seguir/deixar de seguir muda aqui primeiro e grava depois (se
- * der erro, volta). */
+ * mudar na hora: o leitor de notícia, a aba Temas de Seguir, a seção Temas
+ * do menu. A lista vem do layout; seguir/deixar de seguir muda aqui
+ * primeiro e grava depois (se der erro, volta). */
 
 type ValorSeguindo = {
   itens: ItemSeguido[];
@@ -44,7 +44,7 @@ export function ProvedorSeguindo({ inicial, children }: { inicial: ItemSeguido[]
           mostrarToast(resultado.erro);
           return;
         }
-        mostrarToast(jaSegue ? `Você deixou de seguir ${item.rotulo}` : `Seguindo ${item.rotulo}. As notícias aparecem em Início › Seguindo`);
+        mostrarToast(jaSegue ? `Você deixou de seguir ${item.rotulo}` : `Seguindo ${item.rotulo}. As notícias aparecem em Temas`);
       });
     },
     [ids, estado.itens],

@@ -3,7 +3,8 @@ import type { ArtigoLista } from "./feed";
 /* Seguir temas e nomes (sql/045). Tema: um subassunto da taxonomia do
  * coletor ("Inteligência artificial"); nome: pessoa, organização, lugar
  * ou obra que o spaCy achou nas notícias ("Lula", "GTA 6"). As notícias
- * aparecem na aba Seguindo do Início e sobem no resumo por e-mail. */
+ * aparecem em Temas (no menu, abaixo das coleções) e sobem no resumo por
+ * e-mail. */
 
 export type TipoSeguido = "tema" | "nome";
 
@@ -17,6 +18,19 @@ export const MAX_SEGUINDO = 100;
 const MAX_NOMES_NA_NOTICIA = 6;
 
 export const idDoItem = (item: Pick<ItemSeguido, "tipo" | "chave">) => `${item.tipo}:${item.chave}`;
+
+/** A página das notícias de um tema ou nome (app/(app)/feeds/tema). */
+export const hrefDoTema = (item: Pick<ItemSeguido, "tipo" | "chave">) =>
+  `/feeds/tema/${item.tipo}/${encodeURIComponent(item.chave)}`;
+
+/** Como o tema aparece: "#eleições"; nome fica como está ("Lula"). */
+export const rotuloDoTema = (item: Pick<ItemSeguido, "tipo" | "rotulo">) =>
+  item.tipo === "tema" ? `#${item.rotulo.toLowerCase()}` : item.rotulo;
+
+/** Em ordem alfabética, como as fontes nas coleções. */
+export function ordenarTemas<T extends Pick<ItemSeguido, "rotulo">>(itens: T[]) {
+  return [...itens].sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"));
+}
 
 /** Igual ao sinais.normalizar do coletor: minúsculas, sem acento, só
  * letras, números e espaço. */

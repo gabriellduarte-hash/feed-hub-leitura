@@ -201,7 +201,7 @@ export function PaineisDoAgrupamento({
             Marcar pares
           </Link>
         </Painel>
-        <Painel titulo="Temas e nomes mais seguidos" nota="Quantas pessoas seguem cada um (aba Seguindo).">
+        <Painel titulo="Temas e nomes mais seguidos" nota="Quantas pessoas seguem cada um (Temas).">
           <Barras itens={seguidos} />
         </Painel>
       </div>

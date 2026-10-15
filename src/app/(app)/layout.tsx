@@ -21,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { data: topicos },
     { data: contagens },
     { data: seguindo },
+    { data: contagemTemas },
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase
@@ -32,6 +33,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     supabase.from("novas_por_fonte").select("source_id, novas"),
     // temas e nomes seguidos (sql/045); sem a tabela, vem vazio
     supabase.from("seguindo").select("tipo, chave, rotulo").order("criado_em"),
+    // histórias de hoje de cada tema seguido (sql/046), o número do menu
+    supabase.rpc("contagem_seguidos"),
   ]);
 
   const novasPorFonte = new Map((contagens ?? []).map((c) => [c.source_id as string, c.novas as number]));
@@ -63,6 +66,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         email: user?.email ?? "",
         admin: ehAdmin(user?.email),
         seguindo: (seguindo ?? []) as ItemSeguido[],
+        contagemTemas: Object.fromEntries(
+          ((contagemTemas ?? []) as { tipo: string; chave: string; noticias: number }[]).map((c) => [
+            `${c.tipo}:${c.chave}`,
+            c.noticias,
+          ]),
+        ),
         // nome/sobrenome/cor ficam nos metadados do usuário (Supabase Auth),
         // editados em Configurações > Perfil
         perfil: {
