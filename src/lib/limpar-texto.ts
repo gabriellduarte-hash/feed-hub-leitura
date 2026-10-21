@@ -122,12 +122,14 @@ export function limparTexto(texto: string | null | undefined): string {
 
 // Pelo Google Notícias, a busca "site:" também traz páginas que não são
 // notícia: listagens ("... - Página 1246"), páginas de pessoa ou de filme
-// ("Milo Quifes") e de streaming ("Ver X online"). Mesma regra do coletor
+// ("Milo Quifes"), de streaming ("Ver X online") e de tag do WordPress
+// ("Arquivo para iPhone Duo"). Mesma regra do coletor
 // (alternativas.eh_noticia_do_google_news).
 export function ehNoticiaDoGoogleNews(titulo: string) {
   return !(
     /(^|\s)(p[áa]gina|page)\s+\d+/i.test(titulo) ||
     /^(ver|assistir)\b.*\bonline$/i.test(titulo) ||
+    /^(arquivos?\s+para|archives?\s+for)\b/i.test(titulo) ||
     titulo.trim().split(/\s+/).length < 4
   );
 }
