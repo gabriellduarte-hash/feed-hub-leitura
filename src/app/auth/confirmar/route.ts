@@ -13,9 +13,12 @@ export async function GET(request: NextRequest) {
   const tokenHash = url.searchParams.get("token_hash");
   const tipo = url.searchParams.get("type") as EmailOtpType | null;
   const code = url.searchParams.get("code");
+  // Só caminhos do próprio site (nada de redirecionar pra fora). Confere
+  // pelo endereço já montado: "/\site.com" e "/<tab>/site.com" começam com
+  // uma barra só, mas o navegador lê como "//site.com", outro site.
   const next = url.searchParams.get("next") ?? "/";
-  // só caminhos do próprio site (nada de redirecionar pra fora)
-  const destino = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const pedido = URL.canParse(next, url.origin) ? new URL(next, url.origin) : null;
+  const destino = pedido?.origin === url.origin ? pedido.pathname + pedido.search + pedido.hash : "/";
 
   // O Google devolve ?error=access_denied quando a pessoa cancela
   if (url.searchParams.get("error")) {

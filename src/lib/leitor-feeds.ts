@@ -1,3 +1,5 @@
+import { lookup } from "node:dns/promises";
+import { BlockList } from "node:net";
 import { XMLParser } from "fast-xml-parser";
 import {
   consertarAcentos,
@@ -31,21 +33,40 @@ export type Noticia = {
 // O servidor vai abrir links digitados pelo usuário. Sem isso, alguém
 // poderia pedir "http://localhost:..." ou um IP da rede interna da
 // hospedagem e usar o hub pra acessar o que não devia (SSRF).
-function hostPermitido(url: URL) {
+
+// Redes internas: localhost, privadas, da própria máquina, da operadora
+// (100.64/10), de teste, multicast e reservadas. O BlockList já confere o
+// IPv4 embutido num IPv6 (::ffff:127.0.0.1 cai na regra do 127/8); uma
+// regra ::ffff:0:0/96 bloquearia todo IPv4.
+const REDES_INTERNAS = new BlockList();
+for (const [rede, bits] of [
+  ["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16], ["172.16.0.0", 12],
+  ["192.0.0.0", 24], ["192.168.0.0", 16], ["198.18.0.0", 15], ["224.0.0.0", 3],
+] as const) {
+  REDES_INTERNAS.addSubnet(rede, bits, "ipv4");
+}
+for (const [rede, bits] of [
+  ["::", 127], ["64:ff9b::", 96], ["fc00::", 7], ["fe80::", 10], ["ff00::", 8],
+] as const) {
+  REDES_INTERNAS.addSubnet(rede, bits, "ipv6");
+}
+
+async function hostPermitido(url: URL) {
   if (url.protocol !== "http:" && url.protocol !== "https:") return false;
-  const host = url.hostname.toLowerCase();
-  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) {
+  // "localhost." (com ponto no fim) é o mesmo localhost
+  const host = url.hostname.toLowerCase().replace(/\.$/, "");
+  if (!host || host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) {
     return false;
   }
   if (host.startsWith("[")) return false; // IPv6 literal: sem caso de uso legítimo aqui
-  const ip = host.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
-  if (ip) {
-    const [a, b] = [Number(ip[1]), Number(ip[2])];
-    if (a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) {
-      return false;
-    }
+  // O nome pode apontar pra um IP interno ("127.0.0.1.nip.io"): confere
+  // os IPs de verdade. Nome que não existe: o fetch falharia do mesmo jeito.
+  try {
+    const enderecos = await lookup(host, { all: true, verbatim: true });
+    return enderecos.length > 0 && enderecos.every((e) => !REDES_INTERNAS.check(e.address, e.family === 6 ? "ipv6" : "ipv4"));
+  } catch {
+    return false;
   }
-  return true;
 }
 
 export class ErroBusca extends Error {}
@@ -54,7 +75,7 @@ export class ErroBusca extends Error {}
 export async function buscar(endereco: string): Promise<{ url: string; tipo: string; texto: string }> {
   let atual = new URL(endereco);
   for (let i = 0; i <= MAX_REDIRECIONAMENTOS; i++) {
-    if (!hostPermitido(atual)) throw new ErroBusca("endereço não permitido");
+    if (!(await hostPermitido(atual))) throw new ErroBusca("endereço não permitido");
     const resposta = await fetch(atual, {
       headers: { "User-Agent": USER_AGENT, Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.9, */*;q=0.8" },
       redirect: "manual",

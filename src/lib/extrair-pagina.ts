@@ -88,6 +88,31 @@ function semCabecalho(texto: string) {
   return linhas.slice(inicio).join("\n");
 }
 
+/** Bloco de "Perguntas frequentes" no fim da matéria (Exame): a pergunta
+ * fica num <summary> e a resposta num parágrafo, que reconta a notícia e
+ * parecia texto duplicado. Sai antes do Readability (mesma regra do
+ * coletor, texto.sem_perguntas_frequentes). */
+const PERGUNTAS_FREQUENTES = /perguntas\s+frequentes|perguntas\s+e\s+respostas|\bfaq\b|frequently\s+asked/i;
+
+function semPerguntasFrequentes(document: { querySelectorAll: (s: string) => ArrayLike<Element> }) {
+  for (const el of Array.from(document.querySelectorAll("details"))) el.remove();
+  for (const titulo of Array.from(document.querySelectorAll("h2, h3, h4"))) {
+    if (!titulo.parentElement || !PERGUNTAS_FREQUENTES.test(titulo.textContent ?? "")) continue;
+    if (titulo.parentElement.tagName === "SECTION") {
+      titulo.parentElement.remove();
+      continue;
+    }
+    // sem <section>: o título e o que vem depois até o próximo título do mesmo nível
+    let irmao = titulo.nextElementSibling;
+    while (irmao && !(/^H[1-4]$/.test(irmao.tagName) && irmao.tagName <= titulo.tagName)) {
+      const seguinte = irmao.nextElementSibling;
+      irmao.remove();
+      irmao = seguinte;
+    }
+    titulo.remove();
+  }
+}
+
 export type PaginaExtraida = { texto: string | null; imagem: string | null; autor: string | null; paywall: boolean };
 
 export async function extrairPagina(endereco: string): Promise<PaginaExtraida> {
@@ -100,6 +125,7 @@ export async function extrairPagina(endereco: string): Promise<PaginaExtraida> {
   let texto: string | null = null;
   if (!paywall) {
     const { document } = parseHTML(html);
+    semPerguntasFrequentes(document);
     const artigo = new Readability(document as unknown as Document).parse();
     if (artigo?.content) texto = semCabecalho(limparTexto(htmlParaTexto(artigo.content))).slice(0, MAX_CARACTERES) || null;
     autor = autor ?? artigo?.byline ?? null;

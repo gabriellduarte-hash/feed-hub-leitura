@@ -18,6 +18,9 @@ export const maxDuration = 60;
 
 const ORCAMENTO_MS = 45_000; // folga antes do limite da função
 const PAGINAS_POR_RODADA = 40;
+// Quantas pendentes olhar por tabela: as que já vieram completas do feed
+// saem da fila (marcadas), e as que precisam de página disputam as vagas
+const PENDENTES_POR_TABELA = 300;
 const PAGINAS_EM_PARALELO = 4;
 const TEXTO_CURTO = 600; // abaixo disso, o "texto" é só a descrição do feed
 // Resumo do feed que chama pro site ("Continue lendo »"): cortado, mesmo
@@ -74,15 +77,33 @@ export async function POST(request: NextRequest) {
       // ocupa o lugar das diretas no limite)
       .not("url", "like", "https://news.google.com/%")
       .order("collected_at", { ascending: false })
-      .limit(PAGINAS_POR_RODADA);
-    return ((data ?? []) as Pendente[])
-      .filter((p) => !p.content || p.content.length < TEXTO_CURTO || CORTADO.test(p.content) || !p.image_url)
-      .map((p) => ({ ...p, tabela }));
+      .limit(PENDENTES_POR_TABELA);
+    const linhas = (data ?? []) as Pendente[];
+    const precisa = (p: Pendente) => !p.content || p.content.length < TEXTO_CURTO || CORTADO.test(p.content) || !p.image_url;
+    // As que vieram completas do feed (texto e foto) não precisam abrir a
+    // página: saem da fila. Antes elas ficavam nela pra sempre, ocupando as
+    // vagas das mais novas, e as que precisavam (ESPN) nunca eram tentadas.
+    const completas = linhas.filter((p) => !precisa(p)).map((p) => p.id);
+    // em lotes: 300 ids numa URL só passariam do limite da API
+    for (let i = 0; i < completas.length; i += 100) {
+      await admin
+        .from(tabela)
+        .update({ enriquecido_em: new Date().toISOString() })
+        .in("id", completas.slice(i, i + 100));
+    }
+    return linhas.filter(precisa).map((p) => ({ ...p, tabela }));
   };
-  const fila = [
-    ...(await buscarPendentes("articles", "feed_id", feedIds)),
-    ...(await buscarPendentes("catalog_articles", "catalog_id", catalogoIds)),
-  ].slice(0, PAGINAS_POR_RODADA);
+  // fontes dos usuários e catálogo se revezam nas vagas (antes o catálogo
+  // só entrava se sobrasse lugar)
+  const [doUsuario, doCatalogo] = await Promise.all([
+    buscarPendentes("articles", "feed_id", feedIds),
+    buscarPendentes("catalog_articles", "catalog_id", catalogoIds),
+  ]);
+  const fila: ((typeof doUsuario)[number])[] = [];
+  for (let i = 0; fila.length < PAGINAS_POR_RODADA && (i < doUsuario.length || i < doCatalogo.length); i++) {
+    if (doUsuario[i]) fila.push(doUsuario[i]);
+    if (doCatalogo[i] && fila.length < PAGINAS_POR_RODADA) fila.push(doCatalogo[i]);
+  }
 
   const trabalhar = async () => {
     for (let item = fila.shift(); item; item = fila.shift()) {
